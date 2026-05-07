@@ -1,4 +1,6 @@
-declare global {
+import 'react'
+
+declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
       'iconify-icon': React.DetailedHTMLProps<
@@ -14,5 +16,3 @@ declare global {
     }
   }
 }
-
-export {}
