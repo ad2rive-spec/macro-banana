@@ -330,6 +330,42 @@ function RefThumb({ file, onRemove }: { file: File; onRemove: () => void }) {
   )
 }
 
+// ── Video first-frame thumbnail ──
+function VideoFrameThumb({ file, className }: { file: File; className?: string }) {
+  const [thumb, setThumb] = useState<string | null>(null)
+  const [url] = useState(() => URL.createObjectURL(file))
+
+  useEffect(() => {
+    const video = document.createElement('video')
+    video.src = url
+    video.crossOrigin = 'anonymous'
+    video.muted = true
+    video.playsInline = true
+    video.currentTime = 0.1
+
+    video.addEventListener('seeked', () => {
+      const canvas = document.createElement('canvas')
+      canvas.width  = video.videoWidth  || 160
+      canvas.height = video.videoHeight || 90
+      canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height)
+      setThumb(canvas.toDataURL('image/jpeg', 0.8))
+    }, { once: true })
+
+    video.addEventListener('loadedmetadata', () => { video.currentTime = 0.1 }, { once: true })
+    video.load()
+
+    return () => { video.src = '' }
+  }, [url])
+
+  if (thumb) return <img src={thumb} alt="" className={className ?? 'w-full h-full object-cover'} />
+  // fallback while loading
+  return (
+    <div className="w-full h-full bg-[#1a1a24] flex items-center justify-center">
+      <div className="w-3 h-3 border border-[#a78bfa]/40 border-t-[#a78bfa] rounded-full animate-spin" />
+    </div>
+  )
+}
+
 // ── Detail modal ──
 const MODEL_LABELS: Record<string, string> = {
   'gpt-image-2': 'GPT Image 2',
@@ -355,6 +391,13 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
   function handleBackdrop(e: React.MouseEvent) {
     if (e.target === e.currentTarget) onClose()
   }
+
+  // close on Escape key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   const meta: { label: string; value: string }[] = [
     { label: 'Model',      value: MODEL_LABELS[task.model || ''] || task.model || '—' },
@@ -435,6 +478,14 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:image-plus" width="14" height="14" />
                   Use as Reference Image
+                </button>
+              )}
+
+              {task.video_url && isVideo && (
+                <button onClick={() => { onUseAsRef(task.video_url!); onClose() }}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
+                  <iconify-icon icon="lucide:video" width="14" height="14" />
+                  Use as Reference Video
                 </button>
               )}
 
@@ -823,6 +874,23 @@ function StudioPageInner() {
   async function handleDemoGenerate() {
     if (!prompt.trim()) return setError('Please describe what you want to create')
     setError('')
+
+    const cameraText = hasCameraSettings(cameraSettings)
+      ? ` Shot on ${buildCameraPrompt(cameraSettings)}.` : ''
+    const payload = {
+      model, resolution, ratio, duration, generate_audio: audio,
+      ...(tab === 'image' && quality ? { quality } : {}),
+      ...(model === 'gpt-image-2' ? { background } : {}),
+      ...(model.includes('seedance') ? { mode: seedanceMode } : {}),
+      prompt: prompt + cameraText,
+    }
+    console.group(`🍌 [DEMO] Generate ×${count}`)
+    console.log('📋 Prompt:', prompt + cameraText)
+    console.log('🤖 Model:', model)
+    console.log('📦 Full payload (demo):', payload)
+    if (hasCameraSettings(cameraSettings)) console.log('📷 Camera:', buildCameraPrompt(cameraSettings))
+    if (refs.length > 0) console.log('🖼 Refs:', refs.map(f => f.name))
+    console.groupEnd()
     const demoImages = [
       '/pic/edited-adjusted-1756966092512.png',
       '/pic/edited-generated-1757037407216.png',
@@ -875,16 +943,25 @@ function StudioPageInner() {
       ? ` Shot on ${buildCameraPrompt(cameraSettings)}.` : ''
     const content: unknown[] = [{ type: 'text', text: prompt + cameraText }]
     refs.forEach(f => content.push({ type: 'image_url', image_url: { url: `upload://${f.name}` } }))
+
+    const payload = {
+      model, content, resolution, ratio, duration, generate_audio: audio,
+      ...(tab === 'image' && quality ? { quality } : {}),
+      ...(model === 'gpt-image-2' && thinking !== 'off' ? { thinking } : {}),
+      ...(model === 'gpt-image-2' ? { background } : {}),
+      ...(model.includes('seedance') ? { mode: seedanceMode } : {}),
+    }
+
+    console.group(`🍌 Generate ×${count}`)
+    console.log('📋 Prompt:', prompt + cameraText)
+    console.log('🤖 Model:', model)
+    console.log('📦 Full payload:', payload)
+    if (hasCameraSettings(cameraSettings)) console.log('📷 Camera:', buildCameraPrompt(cameraSettings))
+    if (refs.length > 0) console.log('🖼 Refs:', refs.map(f => f.name))
+    console.groupEnd()
+
     try {
-      const submissions = Array.from({ length: count }, () =>
-        submitTask({
-          model, content, resolution, ratio, duration, generate_audio: audio,
-          ...(tab === 'image' && quality ? { quality } : {}),
-          ...(model === 'gpt-image-2' && thinking !== 'off' ? { thinking } : {}),
-          ...(model === 'gpt-image-2' ? { background } : {}),
-          ...(model.includes('seedance') ? { mode: seedanceMode } : {}),
-        })
-      )
+      const submissions = Array.from({ length: count }, () => submitTask(payload))
       const results = await Promise.all(submissions)
       const newTasks: Task[] = results.map(({ task_id }) => ({
         task_id, status: 'queued', prompt, model, resolution, ratio, duration, created_at: Date.now(),
@@ -1240,7 +1317,12 @@ function StudioPageInner() {
                         return (
                           <div key={i} className="relative flex-shrink-0 group">
                             <div className="w-9 h-9 rounded-lg overflow-hidden border border-white/10 bg-white/[0.05] flex items-center justify-center">
-                              {isAud ? <span className="text-[11px]">🎵</span> : <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />}
+                              {isAud
+                                ? <span className="text-[11px]">🎵</span>
+                                : isVid
+                                  ? <VideoFrameThumb file={f} />
+                                  : <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                              }
                             </div>
                             <button onClick={() => { const insert = tag + ' '; setPrompt(p => p.endsWith(' ') || p === '' ? p + insert : p + ' ' + insert); setTimeout(() => textareaRef.current?.focus(), 50) }}
                               className="absolute -bottom-1 -right-1 bg-[#a78bfa] text-black text-[8px] font-bold px-1 rounded leading-tight border-none cursor-pointer hover:bg-[#c4b5fd] transition-colors z-10">{tag}</button>
@@ -1628,8 +1710,30 @@ function StudioPageInner() {
           onUseAsRef={(url) => {
             fetch(url).then(r => r.blob()).then(blob => {
               const name = url.split('/').pop() || 'reference.png'
-              const file = new File([blob], name, { type: blob.type })
-              setRefs(p => [...p, file].slice(0, 9))
+              const isVideoFile = name.endsWith('.mp4') || name.endsWith('.webm') || name.endsWith('.mov')
+              const file = new File([blob], name, { type: blob.type || (isVideoFile ? 'video/mp4' : 'image/png') })
+
+              // In first_last_frames mode: fill firstFrame first, then lastFrame (images only)
+              if (tab === 'video' && model.includes('seedance') && seedanceMode === 'first_last_frames' && !isVideoFile) {
+                if (!firstFrame) {
+                  setFirstFrame(file)
+                } else if (!lastFrame) {
+                  setLastFrame(file)
+                }
+              } else if (tab === 'video' && model.includes('seedance') && seedanceMode === 'omni_reference') {
+                // omni_reference: add image or video to refs
+                const maxRefs = REF_LIMITS[model]?.max ?? 12
+                setRefs(p => [...p, file].slice(0, maxRefs))
+              } else if (!isVideoFile) {
+                // Default: add image to refs list
+                const maxRefs = REF_LIMITS[model]?.max ?? 9
+                setRefs(p => [...p, file].slice(0, maxRefs))
+              } else {
+                // Video in non-omni mode: switch to omni_reference and add
+                setSeedanceMode('omni_reference')
+                const maxRefs = REF_LIMITS[model]?.max ?? 12
+                setRefs(p => [...p, file].slice(0, maxRefs))
+              }
             })
           }}
           onReusePrompt={(p) => {
