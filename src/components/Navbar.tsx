@@ -9,16 +9,6 @@ const NAV = [
   { href: '/settings', label: 'Settings', icon: 'lucide:settings-2' },
 ]
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'iconify-icon': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
-        icon?: string; width?: string | number; height?: string | number
-      }, HTMLElement>
-    }
-  }
-}
-
 export function Navbar() {
   const pathname = usePathname()
   const [online, setOnline] = useState<boolean | null>(null)

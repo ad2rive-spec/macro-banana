@@ -8,17 +8,6 @@ import { MaskEditor } from '@/components/MaskEditor'
 
 // ── Icons via Iconify (lucide set) ──
 // Usage: <iconify-icon icon="lucide:xxx" width="N" height="N" />
-// Declared as JSX intrinsic so TypeScript doesn't complain
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'iconify-icon': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
-        icon?: string; width?: string | number; height?: string | number;
-        style?: React.CSSProperties; inline?: boolean | string
-      }, HTMLElement>
-    }
-  }
-}
 
 const IconImage    = () => <iconify-icon icon="lucide:image"       width="18" height="18" />
 const IconVideo    = () => <iconify-icon icon="lucide:video"        width="18" height="18" />
