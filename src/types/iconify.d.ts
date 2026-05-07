@@ -1,18 +1,19 @@
-import 'react'
+import type { HTMLAttributes, DetailedHTMLProps, CSSProperties } from 'react'
 
-declare module 'react' {
-  namespace JSX {
+type IconifyIconProps = DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> & {
+  icon?: string
+  width?: string | number
+  height?: string | number
+  style?: CSSProperties
+  inline?: boolean | string
+}
+
+declare global {
+  namespace React.JSX {
     interface IntrinsicElements {
-      'iconify-icon': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          icon?: string
-          width?: string | number
-          height?: string | number
-          style?: React.CSSProperties
-          inline?: boolean | string
-        },
-        HTMLElement
-      >
+      'iconify-icon': IconifyIconProps
     }
   }
 }
+
+export type { IconifyIconProps }
