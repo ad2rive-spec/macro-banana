@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-purple:        #7132f5;
+  --color-purple-dark:   #5a28c4;
+  --color-purple-subtle: rgba(113, 50, 245, 0.18);
+  --color-green:         #4ade80;
+
+  --color-base:    #0d0d12;
+  --color-surface: #111118;
+  --color-panel:   #16161f;
+  --color-raised:  #1c1c28;
+  --color-hover:   #22222f;
+
+  --color-text:    #f0f0f5;
+  --color-muted:   #8888a0;
+  --color-faint:   #55556a;
+  --color-border:  rgba(255, 255, 255, 0.08);
+}
+
+html, body { height: 100%; overflow: hidden; }
+body { -webkit-font-smoothing: antialiased; background: var(--color-base); color: var(--color-text); }
+
+/* Chip */
+.chip {
+  @apply px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150
+         border border-white/10 bg-raised text-muted hover:text-text hover:border-white/20;
+}
+.chip.active {
+  background: var(--color-purple-subtle);
+  border-color: rgba(113, 50, 245, 0.4);
+  @apply text-purple-300;
+}
+
+/* Scrollbar */::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-hover rounded-sm; }
+
+/* Skeleton shimmer — Facebook-style loading */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.045) 40%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.045) 60%,
+    transparent 100%
+  );
+  animation: shimmer 1.6s ease-in-out infinite;
+}
