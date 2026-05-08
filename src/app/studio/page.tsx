@@ -120,67 +120,6 @@ const SEEDANCE_MODE_LABELS: Record<string, string> = {
   omni_reference:   'Omni Reference',
 }
 
-// ── Camera presets ──
-interface CameraPreset {
-  id: string
-  label: string
-  sub?: string
-  emoji: string
-}
-interface LensPreset {
-  id: string
-  label: string
-  sub?: string
-  emoji: string
-}
-const CAMERA_PRESETS: CameraPreset[] = [
-  { id: 'none',              label: 'None',                emoji: '—'   },
-  // Classic Film
-  { id: 'leica-m6',          label: 'Leica M6',            sub: '35MM',        emoji: '📷' },
-  { id: 'hasselblad-500cm',  label: 'Hasselblad 500C/M',   sub: 'MEDIUM FMT',  emoji: '📷' },
-  { id: 'rolleiflex-28f',    label: 'Rolleiflex 2.8F',     sub: 'TLR',         emoji: '📷' },
-  { id: 'nikon-f3',          label: 'Nikon F3',            sub: '35MM SLR',    emoji: '📷' },
-  { id: 'canon-ae1',         label: 'Canon AE-1',          sub: '35MM SLR',    emoji: '📷' },
-  { id: 'contax-t2',         label: 'Contax T2',           sub: 'COMPACT',     emoji: '📷' },
-  { id: 'polaroid-sx70',     label: 'Polaroid SX-70',      sub: 'INSTANT',     emoji: '📸' },
-  { id: 'lomo-lc-a',         label: 'Lomo LC-A',           sub: 'LOMOGRAPHY',  emoji: '📷' },
-  // Digital Cinema
-  { id: 'arri-alexa',        label: 'ARRI Alexa 35',       sub: 'DIGITAL',     emoji: '🎬' },
-  { id: 'red-v-raptor',      label: 'RED V-RAPTOR',        sub: 'DIGITAL',     emoji: '🎬' },
-]
-const LENS_PRESETS: LensPreset[] = [
-  { id: 'none',         label: 'None',                emoji: '—'  },
-  { id: 'spherical',    label: 'Spherical Prime',     sub: 'SPHERICAL',   emoji: '🔵' },
-  { id: 'anamorphic',   label: 'Anamorphic 2x',       sub: 'ANAMORPHIC',  emoji: '🟣' },
-  { id: 'vintage',      label: 'Vintage Cooke S4',    sub: 'VINTAGE',     emoji: '🟡' },
-  { id: 'macro',        label: 'Macro 100mm',         sub: 'MACRO',       emoji: '🔬' },
-  { id: 'fisheye',      label: 'Fisheye 8mm',         sub: 'FISHEYE',     emoji: '🐟' },
-  { id: 'tilt-shift',   label: 'Tilt-Shift 45mm',     sub: 'TILT-SHIFT',  emoji: '🏙️' },
-]
-const FOCAL_LENGTHS: (number | null)[] = [null, 8, 14, 18, 24, 28, 35, 50, 85, 100, 135, 200]
-const APERTURES: (string | null)[] = [null, 'f/1.2', 'f/1.4', 'f/1.8', 'f/2', 'f/2.8', 'f/4', 'f/5.6', 'f/8', 'f/11']
-
-interface CameraSettings {
-  camera: string
-  lens: string
-  focalLength: number | null
-  aperture: string | null
-}
-const DEFAULT_CAMERA: CameraSettings = { camera: 'none', lens: 'none', focalLength: null, aperture: null }
-
-function buildCameraPrompt(s: CameraSettings): string {
-  const parts: string[] = []
-  if (s.camera !== 'none') parts.push(CAMERA_PRESETS.find(c => c.id === s.camera)?.label || '')
-  if (s.lens   !== 'none') parts.push(LENS_PRESETS.find(l => l.id === s.lens)?.label || '')
-  if (s.focalLength !== null) parts.push(`${s.focalLength}mm`)
-  if (s.aperture    !== null) parts.push(s.aperture)
-  return parts.filter(Boolean).join(', ')
-}
-
-function hasCameraSettings(s: CameraSettings) {
-  return s.camera !== 'none' || s.lens !== 'none' || s.focalLength !== null || s.aperture !== null
-}
-
 // Reference image limits & descriptions per model
 const REF_LIMITS: Record<string, { max: number; desc: string }> = {
   'gpt-image-2':                    { max: 16, desc: 'Up to 16 reference images' },
@@ -759,18 +698,17 @@ function StudioPageInner() {
   // #13: load settings defaults on init
   const defaults = typeof window !== 'undefined' ? loadSettings() : {}
 
-  const [tab, setTab]         = useState<MediaTab>('video')
+  const [tab, setTab]         = useState<MediaTab>('image')
   const [prompt, setPrompt]   = useState('')
-  const [model, setModel]     = useState((defaults.defaultVideoModel as string) || VIDEO_MODELS[0].value)
-  const [ratio, setRatio]     = useState((defaults.defaultRatio as string) || '9:16')
+  const [model, setModel]     = useState((defaults.defaultImageModel as string) || IMAGE_MODELS[0].value)
+  const [ratio, setRatio]     = useState((defaults.defaultRatio as string) || '1:1')
   const [quality, setQuality] = useState('high')
-  const [resolution, setRes]  = useState((defaults.defaultResolution as string) || '1080p')
+  const [resolution, setRes]  = useState((defaults.defaultResolution as string) || '2K')
   const [duration, setDur]    = useState((defaults.defaultDuration as number) || 5)
   const [audio, setAudio]     = useState(false)
   const [thinking, setThinking] = useState('off')
   const [background, setBackground] = useState('auto')
   const [seedanceMode, setSeedanceMode] = useState('text_to_video')
-  const [cameraSettings, setCameraSettings] = useState<CameraSettings>(DEFAULT_CAMERA)
   // #2: count drives batch submission
   const [count, setCount]     = useState(1)
   const [refs, setRefs]       = useState<File[]>([])
@@ -794,6 +732,7 @@ function StudioPageInner() {
   const galleryRef  = useRef<HTMLDivElement>(null)
 
   // #9: pick up ?ref= from tasks page "Continue with last frame"
+  // #15: pick up ?prompt= and ?tab= from Guide page "Send to Studio"
   useEffect(() => {
     const ref = searchParams?.get('ref')
     if (ref) {
@@ -801,6 +740,24 @@ function StudioPageInner() {
       setModel((defaults.defaultVideoModel as string) || VIDEO_MODELS[0].value)
       // Pre-populate a reference image URL as a note in the prompt
       setPrompt(p => p || `Continue from: ${ref}`)
+    }
+
+    // Pick up incoming prompt and tab from Guide page
+    const incomingPrompt = searchParams?.get('prompt')
+    const incomingTab    = searchParams?.get('tab') as MediaTab | null
+    if (incomingPrompt) {
+      setPrompt(incomingPrompt)
+    }
+    if (incomingTab === 'image' || incomingTab === 'video') {
+      setTab(incomingTab)
+      const s = typeof window !== 'undefined' ? loadSettings() : {}
+      if (incomingTab === 'image') {
+        const m = (s.defaultImageModel as string) || IMAGE_MODELS[0].value
+        setModel(m)
+      } else {
+        const m = (s.defaultVideoModel as string) || VIDEO_MODELS[0].value
+        setModel(m)
+      }
     }
 
     // Pick up image sent from Grid page
@@ -875,8 +832,7 @@ function StudioPageInner() {
     if (!prompt.trim()) return setError('Please describe what you want to create')
     setError('')
 
-    const cameraText = hasCameraSettings(cameraSettings)
-      ? ` Shot on ${buildCameraPrompt(cameraSettings)}.` : ''
+    const cameraText = ''
     const payload = {
       model, resolution, ratio, duration, generate_audio: audio,
       ...(tab === 'image' && quality ? { quality } : {}),
@@ -885,10 +841,9 @@ function StudioPageInner() {
       prompt: prompt + cameraText,
     }
     console.group(`🍌 [DEMO] Generate ×${count}`)
-    console.log('📋 Prompt:', prompt + cameraText)
+    console.log('📋 Prompt:', prompt)
     console.log('🤖 Model:', model)
     console.log('📦 Full payload (demo):', payload)
-    if (hasCameraSettings(cameraSettings)) console.log('📷 Camera:', buildCameraPrompt(cameraSettings))
     if (refs.length > 0) console.log('🖼 Refs:', refs.map(f => f.name))
     console.groupEnd()
     const demoImages = [
@@ -939,9 +894,7 @@ function StudioPageInner() {
     if (demoMode) return handleDemoGenerate()
     if (!prompt.trim()) return setError('Please describe what you want to create')
     setError(''); setLoading(true)
-    const cameraText = hasCameraSettings(cameraSettings)
-      ? ` Shot on ${buildCameraPrompt(cameraSettings)}.` : ''
-    const content: unknown[] = [{ type: 'text', text: prompt + cameraText }]
+    const content: unknown[] = [{ type: 'text', text: prompt }]
     refs.forEach(f => content.push({ type: 'image_url', image_url: { url: `upload://${f.name}` } }))
 
     const payload = {
@@ -953,10 +906,9 @@ function StudioPageInner() {
     }
 
     console.group(`🍌 Generate ×${count}`)
-    console.log('📋 Prompt:', prompt + cameraText)
+    console.log('📋 Prompt:', prompt)
     console.log('🤖 Model:', model)
     console.log('📦 Full payload:', payload)
-    if (hasCameraSettings(cameraSettings)) console.log('📷 Camera:', buildCameraPrompt(cameraSettings))
     if (refs.length > 0) console.log('🖼 Refs:', refs.map(f => f.name))
     console.groupEnd()
 
@@ -1233,11 +1185,11 @@ function StudioPageInner() {
           <div className="flex items-stretch">
 
             {/* Image / Video tabs */}
-            <div className="flex flex-col border-r border-white/[0.07] flex-shrink-0">
+            <div className="flex flex-col border-r border-white/[0.07] flex-shrink-0 p-1.5 gap-0.5">
               {([['image', <IconImage key="i"/>], ['video', <IconVideo key="v"/>]] as [MediaTab, React.ReactNode][]).map(([t, icon]) => (
                 <button key={t} onClick={() => switchTab(t)}
-                  className={`flex flex-col items-center justify-center gap-1 w-[72px] py-3 border-none cursor-pointer transition-all text-[11px] font-medium capitalize
-                    ${tab === t ? 'text-white bg-white/[0.07]' : 'text-[#444] hover:text-[#777] bg-transparent'}`}>
+                  className={`flex flex-col items-center justify-center gap-1 w-[60px] py-2.5 rounded-xl border-none cursor-pointer transition-all text-[11px] font-medium capitalize
+                    ${tab === t ? 'text-white bg-white/[0.10]' : 'text-[#444] hover:text-[#666] bg-transparent'}`}>
                   {icon}
                   {t}
                 </button>
@@ -1573,108 +1525,24 @@ function StudioPageInner() {
               </Popover>
             )}
 
-            {/* Camera settings — image & video */}
-            <>
-              <div className="w-px h-4 bg-white/[0.07] mx-0.5 flex-shrink-0" />
-                <Popover trigger={
-                  <Pill
-                    icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>}
-                    label="Camera"
-                  />
-                }>
-                  <div className="w-[380px]">
-                    {/* Column headers */}
-                    <div className="grid grid-cols-4 border-b border-white/[0.06]">
-                      {['CAMERA', 'LENS', 'FOCAL', 'APERTURE'].map(h => (
-                        <div key={h} className="py-2 text-[10px] font-bold text-[#444] tracking-widest text-center">{h}</div>
-                      ))}
-                    </div>
-
-                    {/* 4 slot wheels */}
-                    <div className="grid grid-cols-4 divide-x divide-white/[0.06]">
-                      {/* Camera wheel */}
-                      <SlotWheel
-                        items={CAMERA_PRESETS.map(c => c.id)}
-                        selected={cameraSettings.camera}
-                        onSelect={id => setCameraSettings(s => ({ ...s, camera: id }))}
-                        renderItem={(id, active) => {
-                          const c = CAMERA_PRESETS.find(x => x.id === id)!
-                          return (
-                            <div className="flex flex-col items-center gap-0.5 px-1">
-                              <span className="text-base leading-none">{c.emoji}</span>
-                              <span className={`text-[10px] text-center leading-tight ${active ? 'text-white' : 'text-[#444]'}`}>{c.label}</span>
-                            </div>
-                          )
-                        }}
-                      />
-                      {/* Lens wheel */}
-                      <SlotWheel
-                        items={LENS_PRESETS.map(l => l.id)}
-                        selected={cameraSettings.lens}
-                        onSelect={id => setCameraSettings(s => ({ ...s, lens: id }))}
-                        renderItem={(id, active) => {
-                          const l = LENS_PRESETS.find(x => x.id === id)!
-                          return (
-                            <div className="flex flex-col items-center gap-0.5 px-1">
-                              <span className="text-base leading-none">{l.emoji}</span>
-                              <span className={`text-[10px] text-center leading-tight ${active ? 'text-white' : 'text-[#444]'}`}>{l.label}</span>
-                            </div>
-                          )
-                        }}
-                      />
-                      {/* Focal length wheel */}
-                      <SlotWheel
-                        items={FOCAL_LENGTHS}
-                        selected={cameraSettings.focalLength}
-                        onSelect={fl => setCameraSettings(s => ({ ...s, focalLength: fl }))}
-                        renderItem={(fl, active) => fl === null
-                          ? <span className={`text-[12px] ${active ? 'text-[#555]' : 'text-[#333]'}`}>—</span>
-                          : <div className="flex flex-col items-center">
-                              <span className={`text-[18px] font-bold tabular-nums leading-none ${active ? 'text-white' : 'text-[#444]'}`}>{fl}</span>
-                              <span className={`text-[10px] ${active ? 'text-[#888]' : 'text-[#333]'}`}>mm</span>
-                            </div>
-                        }
-                      />
-                      {/* Aperture wheel */}
-                      <SlotWheel
-                        items={APERTURES}
-                        selected={cameraSettings.aperture}
-                        onSelect={ap => setCameraSettings(s => ({ ...s, aperture: ap }))}
-                        renderItem={(ap, active) => ap === null
-                          ? <span className={`text-[12px] ${active ? 'text-[#555]' : 'text-[#333]'}`}>—</span>
-                          : <span className={`text-[13px] font-semibold tabular-nums ${active ? 'text-white' : 'text-[#444]'}`}>{ap}</span>
-                        }
-                      />
-                    </div>
-
-                    {/* Summary + reset */}
-                    <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.06]">
-                      <span className="text-[11px] text-[#555]">
-                        {hasCameraSettings(cameraSettings) ? buildCameraPrompt(cameraSettings) : <span className="text-[#333]">Auto</span>}
-                      </span>
-                      <button onClick={e => { e.stopPropagation(); setCameraSettings(DEFAULT_CAMERA) }}
-                        className="text-[11px] text-[#555] hover:text-[#888] border-none bg-transparent cursor-pointer transition-colors">
-                        Reset
-                      </button>
-                    </div>
-                  </div>
-                </Popover>
-            </>
+            {/* Camera settings removed — use the Prompt Guide instead */}
 
             <div className="w-px h-4 bg-white/[0.07] mx-0.5 flex-shrink-0" />
 
-            {/* #2: Count -/+ now drives batch submission */}
-            <div className="flex items-center gap-1.5 px-1 flex-shrink-0">
-              <button onClick={() => setCount(c => Math.max(1, c - 1))}
-                className="w-6 h-6 rounded-full bg-white/[0.07] hover:bg-white/[0.13] border-none cursor-pointer text-[#777] hover:text-white flex items-center justify-center transition-all text-base leading-none">
-                −
-              </button>
-              <span className="text-[13px] text-[#bbb] font-medium w-7 text-center tabular-nums">{count}/4</span>
-              <button onClick={() => setCount(c => Math.min(4, c + 1))}
-                className="w-6 h-6 rounded-full bg-white/[0.07] hover:bg-white/[0.13] border-none cursor-pointer text-[#777] hover:text-white flex items-center justify-center transition-all text-base leading-none">
-                +
-              </button>
-            </div>
+            {/* Count — image only (video always generates 1) */}
+            {tab === 'image' && (
+              <div className="flex items-center gap-1.5 px-1 flex-shrink-0">
+                <button onClick={() => setCount(c => Math.max(1, c - 1))}
+                  className="w-6 h-6 rounded-full bg-white/[0.07] hover:bg-white/[0.13] border-none cursor-pointer text-[#777] hover:text-white flex items-center justify-center transition-all text-base leading-none">
+                  −
+                </button>
+                <span className="text-[13px] text-[#bbb] font-medium w-7 text-center tabular-nums">{count}/4</span>
+                <button onClick={() => setCount(c => Math.min(4, c + 1))}
+                  className="w-6 h-6 rounded-full bg-white/[0.07] hover:bg-white/[0.13] border-none cursor-pointer text-[#777] hover:text-white flex items-center justify-center transition-all text-base leading-none">
+                  +
+                </button>
+              </div>
+            )}
 
             {/* Audio toggle — video only, Seedance omni_reference or Veo */}
             {tab === 'video' && (model.includes('veo') || (model.includes('seedance') && seedanceMode === 'omni_reference')) && (

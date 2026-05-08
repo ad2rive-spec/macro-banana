@@ -38,6 +38,10 @@ body { -webkit-font-smoothing: antialiased; background: var(--color-base); color
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { @apply bg-hover rounded-sm; }
 
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
 /* Skeleton shimmer — Facebook-style loading */
 @keyframes shimmer {
   0%   { transform: translateX(-100%); }
