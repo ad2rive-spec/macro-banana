@@ -59,3 +59,13 @@ body { -webkit-font-smoothing: antialiased; background: var(--color-base); color
   );
   animation: shimmer 1.6s ease-in-out infinite;
 }
+
+/* Media fade-in — triggered when img/video finishes loading */
+@keyframes media-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.media-fade-in {
+  animation: media-fade-in 0.4s ease-out forwards;
+}

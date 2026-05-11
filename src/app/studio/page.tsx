@@ -534,6 +534,7 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
   const [ar, setAr] = useState<string>(
     task.ratio ? task.ratio.replace(':', '/') : (isVideo ? '16/9' : '1/1')
   )
+  const [isLoaded, setIsLoaded] = useState(false)
 
   function handleMouseEnter() {
     if (isVideo && videoRef.current) {
@@ -562,26 +563,37 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
     >
       <div className="relative flex items-center justify-center bg-[#0d0d12]" style={{ aspectRatio: ar }}>
         {task.status === 'succeeded' && task.video_url ? (
-          isVideo
-            ? <video
-                ref={videoRef}
-                src={task.video_url}
-                muted loop playsInline
-                className="w-full h-full object-cover"
-                onLoadedMetadata={e => {
-                  const v = e.currentTarget
-                  if (v.videoWidth && v.videoHeight) setAr(`${v.videoWidth}/${v.videoHeight}`)
-                }}
-              />
-            : <img
-                src={task.video_url}
-                alt={task.prompt}
-                className="w-full h-full object-cover"
-                onLoad={e => {
-                  const img = e.currentTarget
-                  if (img.naturalWidth && img.naturalHeight) setAr(`${img.naturalWidth}/${img.naturalHeight}`)
-                }}
-              />
+          <>
+            {/* Shimmer placeholder — shown until media finishes loading */}
+            {!isLoaded && (
+              <div className="absolute inset-0 bg-[#1a1a24] overflow-hidden">
+                <div className="absolute inset-0 skeleton-shimmer" />
+              </div>
+            )}
+            {isVideo
+              ? <video
+                  ref={videoRef}
+                  src={task.video_url}
+                  muted loop playsInline
+                  className={`w-full h-full object-cover ${isLoaded ? 'media-fade-in' : 'opacity-0'}`}
+                  onLoadedData={() => setIsLoaded(true)}
+                  onLoadedMetadata={e => {
+                    const v = e.currentTarget
+                    if (v.videoWidth && v.videoHeight) setAr(`${v.videoWidth}/${v.videoHeight}`)
+                  }}
+                />
+              : <img
+                  src={task.video_url}
+                  alt={task.prompt}
+                  className={`w-full h-full object-cover ${isLoaded ? 'media-fade-in' : 'opacity-0'}`}
+                  onLoad={e => {
+                    const img = e.currentTarget
+                    if (img.naturalWidth && img.naturalHeight) setAr(`${img.naturalWidth}/${img.naturalHeight}`)
+                    setIsLoaded(true)
+                  }}
+                />
+            }
+          </>
         ) : (
           <>
             {/* Skeleton shimmer for queued / running */}
