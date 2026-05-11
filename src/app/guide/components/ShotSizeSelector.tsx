@@ -30,17 +30,6 @@ const SHOT_SIZES: ShotSizeDef[] = [
 const VIEW_W = 280
 const VIEW_H = 480
 
-// Silhouette geometry (all in SVG units)
-const HEAD_CX = 140
-const HEAD_CY = 44
-const HEAD_R  = 28
-
-const SHOULDER_Y  = 80
-const SHOULDER_W  = 90   // half-width from centre
-const HIP_Y       = 240
-const HIP_W       = 55   // half-width from centre
-const FOOT_Y      = VIEW_H - 4
-
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface ShotSizeSelectorProps {
@@ -82,35 +71,6 @@ export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
     [selectedIndex, onChange],
   )
 
-  // ── Silhouette path ────────────────────────────────────────────────────────
-  // Simple stylised human: torso trapezoid + legs
-
-  const torsoPath = [
-    `M ${HEAD_CX - SHOULDER_W} ${SHOULDER_Y}`,
-    `L ${HEAD_CX + SHOULDER_W} ${SHOULDER_Y}`,
-    `L ${HEAD_CX + HIP_W} ${HIP_Y}`,
-    `L ${HEAD_CX - HIP_W} ${HIP_Y}`,
-    'Z',
-  ].join(' ')
-
-  // Left leg
-  const leftLegPath = [
-    `M ${HEAD_CX - HIP_W} ${HIP_Y}`,
-    `L ${HEAD_CX - HIP_W - 14} ${FOOT_Y}`,
-    `L ${HEAD_CX - 8} ${FOOT_Y}`,
-    `L ${HEAD_CX - 8} ${HIP_Y}`,
-    'Z',
-  ].join(' ')
-
-  // Right leg
-  const rightLegPath = [
-    `M ${HEAD_CX + 8} ${HIP_Y}`,
-    `L ${HEAD_CX + 8} ${FOOT_Y}`,
-    `L ${HEAD_CX + HIP_W + 14} ${FOOT_Y}`,
-    `L ${HEAD_CX + HIP_W} ${HIP_Y}`,
-    'Z',
-  ].join(' ')
-
   // ── Active zone tint ───────────────────────────────────────────────────────
 
   const tintY = selectedDef ? selectedDef.yFraction * VIEW_H : 0
@@ -131,22 +91,17 @@ export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
         className="outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-purple)] rounded"
         style={{ cursor: 'default', userSelect: 'none', display: 'block' }}
       >
-        {/* ── Silhouette ── */}
-        <g aria-hidden="true" opacity={0.35}>
-          {/* Head */}
-          <circle
-            cx={HEAD_CX}
-            cy={HEAD_CY}
-            r={HEAD_R}
-            fill="var(--color-muted)"
-          />
-          {/* Torso */}
-          <path d={torsoPath} fill="var(--color-muted)" />
-          {/* Left leg */}
-          <path d={leftLegPath} fill="var(--color-muted)" />
-          {/* Right leg */}
-          <path d={rightLegPath} fill="var(--color-muted)" />
-        </g>
+        {/* ── Silhouette — real photo ── */}
+        <image
+          href="/pic/guide/fullbody.png"
+          x={0}
+          y={0}
+          width={VIEW_W}
+          height={VIEW_H}
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+          style={{ pointerEvents: 'none' }}
+        />
 
         {/* ── Active zone tint (above selected crop line) ── */}
         {selectedDef && (
@@ -155,7 +110,7 @@ export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
             y={0}
             width={VIEW_W}
             height={tintY}
-            fill="rgba(113, 50, 245, 0.08)"
+            fill="rgba(255, 215, 0, 0.25)"
             aria-hidden="true"
             style={{ pointerEvents: 'none' }}
           />
@@ -197,42 +152,62 @@ export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
                 y={hitTop}
                 width={VIEW_W}
                 height={hitHeight}
-                fill={isActive ? 'rgba(113,50,245,0.04)' : 'transparent'}
+                fill={isActive ? 'rgba(255,215,0,0.04)' : 'transparent'}
                 className="transition-all"
                 style={{ pointerEvents: 'none' }}
               />
 
-              {/* Crop line */}
+              {/* Crop line — white/purple with opacity so it shows over the photo */}
               <line
                 x1={0}
                 y1={y}
                 x2={VIEW_W}
                 y2={y}
-                stroke={isActive ? 'var(--color-purple)' : 'var(--color-border)'}
-                strokeWidth={isActive ? 1.5 : 1}
+                stroke={isActive ? 'rgba(167,139,250,0.95)' : 'rgba(255,255,255,0.35)'}
+                strokeWidth={isActive ? 2 : 1}
+                strokeDasharray={isActive ? undefined : '4 3'}
               />
 
-              {/* Left abbreviation label */}
+              {/* Left abbreviation label — pill background for legibility */}
+              <rect
+                x={4}
+                y={y - 14}
+                width={28}
+                height={13}
+                rx={3}
+                fill={isActive ? 'rgba(255,215,0,0.85)' : 'rgba(0,0,0,0.55)'}
+                style={{ pointerEvents: 'none' }}
+              />
               <text
-                x={10}
+                x={18}
                 y={y - 4}
-                fontSize={9}
+                fontSize={8}
                 fontFamily="inherit"
-                fontWeight={isActive ? '600' : '400'}
-                fill={isActive ? 'var(--color-text)' : 'var(--color-muted)'}
+                fontWeight="600"
+                textAnchor="middle"
+                fill="white"
               >
                 {def.abbrev}
               </text>
 
-              {/* Right full-name label */}
+              {/* Right full-name label — pill background for legibility */}
+              <rect
+                x={VIEW_W - 4 - def.fullName.length * 5.2}
+                y={y - 14}
+                width={def.fullName.length * 5.2 + 6}
+                height={13}
+                rx={3}
+                fill={isActive ? 'rgba(255,215,0,0.85)' : 'rgba(0,0,0,0.55)'}
+                style={{ pointerEvents: 'none' }}
+              />
               <text
-                x={VIEW_W - 10}
+                x={VIEW_W - 7}
                 y={y - 4}
-                fontSize={9}
+                fontSize={8}
                 fontFamily="inherit"
                 fontWeight={isActive ? '600' : '400'}
                 textAnchor="end"
-                fill={isActive ? 'var(--color-text)' : 'var(--color-muted)'}
+                fill="white"
               >
                 {def.fullName}
               </text>

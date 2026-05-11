@@ -65,7 +65,7 @@ const MOODS: MoodDef[] = [
     label: 'Ethereal',
     description: 'Soft, dreamy, otherworldly',
     gradient: 'from-violet-400/20 to-pink-300/15',
-    textColor: '#a78bfa',
+    textColor: '#FFD700',
   },
 ]
 
@@ -86,7 +86,7 @@ export function MoodPicker({ value, onChange }: MoodPickerProps) {
             className={[
               'relative flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer overflow-hidden',
               isActive
-                ? 'border-[rgba(113,50,245,0.5)] ring-1 ring-[rgba(113,50,245,0.3)]'
+                ? 'border-[rgba(255,215,0,0.5)] ring-1 ring-[rgba(255,215,0,0.3)]'
                 : 'border-[var(--color-border)] hover:border-[var(--color-muted)]',
             ].join(' ')}
             aria-pressed={isActive}

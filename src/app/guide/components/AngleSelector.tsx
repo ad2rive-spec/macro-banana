@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import type { AngleId } from '../types'
 
@@ -9,6 +10,7 @@ interface AngleDef {
   id: AngleId
   label: string
   description: string
+  image: string   // path under /pic/guide/
   icon: React.ReactNode
 }
 
@@ -243,42 +245,49 @@ const ANGLES: AngleDef[] = [
     id: 'eye-level',
     label: 'Eye Level',
     description: 'Natural, neutral perspective',
+    image: '/pic/guide/eye-level.png',
     icon: EyeLevelIcon,
   },
   {
     id: 'low-angle',
     label: 'Low Angle',
     description: 'Empowers subject, creates drama',
+    image: '/pic/guide/low-angle.png',
     icon: LowAngleIcon,
   },
   {
     id: 'high-angle',
     label: 'High Angle',
     description: 'Diminishes subject, shows vulnerability',
+    image: '/pic/guide/high-angle.png',
     icon: HighAngleIcon,
   },
   {
     id: 'birds-eye',
     label: "Bird's Eye",
     description: 'Overhead map-like perspective',
+    image: '/pic/guide/birds-eye-view.png',
     icon: BirdsEyeIcon,
   },
   {
     id: 'worms-eye',
     label: "Worm's Eye",
     description: 'Extreme upward perspective',
+    image: '/pic/guide/worm-eye-view.png',
     icon: WormsEyeIcon,
   },
   {
     id: 'dutch-tilt',
     label: 'Dutch Tilt',
     description: 'Unease, tension, disorientation',
+    image: '/pic/guide/dutch-tilt.png',
     icon: DutchTiltIcon,
   },
   {
     id: 'ots',
     label: 'Over-Shoulder',
     description: 'Conversational, relational framing',
+    image: '/pic/guide/over-the-shoulder.png',
     icon: OTSIcon,
   },
 ]
@@ -288,6 +297,42 @@ const ANGLES: AngleDef[] = [
 interface AngleSelectorProps {
   value: AngleId | null
   onChange: (id: AngleId | null) => void
+}
+
+// ── Thumbnail sub-component ───────────────────────────────────────────────────
+
+function AngleThumbnail({ angle, isActive }: { angle: AngleDef; isActive: boolean }) {
+  const [imgError, setImgError] = useState(false)
+
+  if (!imgError) {
+    return (
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+        <Image
+          src={angle.image}
+          alt={angle.label}
+          fill
+          sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 160px"
+          className="object-cover"
+          onError={() => setImgError(true)}
+        />
+        {/* Active overlay tint */}
+        {isActive && (
+          <div className="absolute inset-0 bg-[var(--color-purple)] opacity-20 pointer-events-none" />
+        )}
+      </div>
+    )
+  }
+
+  // Fallback to SVG icon
+  return (
+    <span
+      className={`transition-colors duration-150 ${
+        isActive ? 'text-[var(--color-purple)]' : 'text-[var(--color-muted)]'
+      }`}
+    >
+      {angle.icon}
+    </span>
+  )
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -317,7 +362,7 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
                 relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 cursor-pointer w-full
                 ${
                   isActive
-                    ? 'bg-[var(--color-purple-subtle)] border-[rgba(113,50,245,0.4)]'
+                    ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
                     : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
                 }
               `}
@@ -325,14 +370,8 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
               aria-pressed={isActive}
               aria-label={`${angle.label}: ${angle.description}`}
             >
-              {/* SVG icon */}
-              <span
-                className={`transition-colors duration-150 ${
-                  isActive ? 'text-[var(--color-purple)]' : 'text-[var(--color-muted)]'
-                }`}
-              >
-                {angle.icon}
-              </span>
+              {/* Thumbnail image with SVG icon fallback */}
+              <AngleThumbnail angle={angle} isActive={isActive} />
 
               {/* Label */}
               <span className="text-[11px] font-medium text-center leading-tight">

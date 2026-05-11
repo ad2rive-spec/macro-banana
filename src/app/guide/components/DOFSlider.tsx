@@ -70,7 +70,7 @@ export function DOFSlider({ value, onChange, cameraApertureSet = false }: DOFSli
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse at 30% 60%, #7132f5 0%, #3b82f6 40%, #0d0d12 80%)',
+              'radial-gradient(ellipse at 30% 60%, #FFD700 0%, #3b82f6 40%, #0d0d12 80%)',
             filter: `blur(${blurPx}px)`,
             transform: 'scale(1.15)', // prevent blur edge clipping
           }}
@@ -88,7 +88,7 @@ export function DOFSlider({ value, onChange, cameraApertureSet = false }: DOFSli
               height: 28,
               top: '15%',
               left: '10%',
-              background: 'rgba(113, 50, 245, 0.7)',
+              background: 'rgba(255, 215, 0, 0.7)',
             }}
           />
           <div

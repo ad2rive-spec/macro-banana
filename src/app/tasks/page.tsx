@@ -87,7 +87,7 @@ export default function TasksPage() {
               </button>
             )}
             <button onClick={() => router.push('/studio')}
-              className="px-3 py-1.5 rounded-xl bg-purple text-white text-xs font-semibold border-none cursor-pointer hover:bg-purple-dark transition-colors">
+              className="px-3 py-1.5 rounded-xl bg-purple text-[#1a1a1a] text-xs font-semibold border-none cursor-pointer hover:bg-purple-dark transition-colors">
               + New
             </button>
           </div>
@@ -233,7 +233,7 @@ export default function TasksPage() {
             <div className="flex gap-2.5 flex-wrap">
               {sel.status === 'succeeded' && sel.video_url && (
                 <>
-                  <a href={sel.video_url} download className="px-4 py-2 rounded-xl bg-purple text-white text-[13px] font-semibold no-underline hover:bg-purple-dark transition-colors">
+                  <a href={sel.video_url} download className="px-4 py-2 rounded-xl bg-purple text-[#1a1a1a] text-[13px] font-semibold no-underline hover:bg-purple-dark transition-colors">
                     ↓ Download
                   </a>
                   <button onClick={() => router.push(`/studio?ref=${encodeURIComponent(sel.video_url!)}`)}

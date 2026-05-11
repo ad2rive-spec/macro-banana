@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+import { useState } from 'react'
 import { addLighting, initialGuideState } from '../logic'
 import type { LightingId } from '../types'
 
@@ -8,7 +10,8 @@ import type { LightingId } from '../types'
 interface LightingCard {
   id: LightingId
   label: string
-  filename: string
+  description: string
+  image: string   // path under /pic/guide/
   gradient: string
 }
 
@@ -16,61 +19,71 @@ const LIGHTING_CARDS: LightingCard[] = [
   {
     id: 'golden-hour',
     label: 'Golden Hour',
-    filename: 'guide-light-golden-hour.jpg',
+    description: 'Warm, golden sunlight just after sunrise or before sunset',
+    image: '/pic/guide/golden-hour-lighting.png',
     gradient: 'from-amber-500 to-orange-600',
   },
   {
     id: 'blue-hour',
     label: 'Blue Hour',
-    filename: 'guide-light-blue-hour.jpg',
+    description: 'Cool, diffused twilight just before sunrise or after sunset',
+    image: '/pic/guide/blue-hour-lighting.png',
     gradient: 'from-blue-700 to-indigo-900',
   },
   {
     id: 'overcast',
     label: 'Overcast',
-    filename: 'guide-light-overcast.jpg',
+    description: 'Soft, even light from a cloudy sky with no harsh shadows',
+    image: '/pic/guide/overcast-diffused-lighting.png',
     gradient: 'from-slate-400 to-slate-600',
   },
   {
     id: 'hard-studio',
     label: 'Hard Studio',
-    filename: 'guide-light-hard-studio.jpg',
+    description: 'Strong directional light creating sharp, defined shadows',
+    image: '/pic/guide/hard-studio-lighting.png',
     gradient: 'from-gray-100 to-gray-400',
   },
   {
     id: 'soft-studio',
     label: 'Soft Studio',
-    filename: 'guide-light-soft-studio.jpg',
+    description: 'Diffused studio light with gentle, flattering shadows',
+    image: '/pic/guide/soft-studio-lighting.png',
     gradient: 'from-gray-200 to-gray-500',
   },
   {
     id: 'neon',
     label: 'Neon',
-    filename: 'guide-light-neon.jpg',
+    description: 'Vivid coloured neon lights with a cyberpunk atmosphere',
+    image: '/pic/guide/neon-cyberpunk-lighting.png',
     gradient: 'from-purple-600 to-pink-500',
   },
   {
     id: 'candlelight',
     label: 'Candlelight',
-    filename: 'guide-light-candlelight.jpg',
+    description: 'Warm, flickering practical light with intimate shadows',
+    image: '/pic/guide/candlelight-practical-lighting.png',
     gradient: 'from-orange-400 to-red-700',
   },
   {
     id: 'rembrandt',
     label: 'Rembrandt',
-    filename: 'guide-light-rembrandt.jpg',
+    description: 'Classic portrait lighting with a small triangle of light on the cheek',
+    image: '/pic/guide/rembrandt-lighting.png',
     gradient: 'from-amber-800 to-stone-900',
   },
   {
     id: 'high-key',
     label: 'High-Key',
-    filename: 'guide-light-high-key.jpg',
+    description: 'Bright, low-contrast lighting with minimal shadows',
+    image: '/pic/guide/high-key-lighting.png',
     gradient: 'from-white to-gray-200',
   },
   {
     id: 'low-key',
     label: 'Low-Key',
-    filename: 'guide-light-low-key.jpg',
+    description: 'Dark, moody lighting with deep shadows and high contrast',
+    image: '/pic/guide/low-key-lighting.png',
     gradient: 'from-gray-800 to-black',
   },
 ]
@@ -82,43 +95,99 @@ interface LightingPickerProps {
   onChange: (newLighting: LightingId[]) => void
 }
 
+// ── Thumbnail sub-component ───────────────────────────────────────────────────
+
+function LightingThumbnail({ card, isActive }: { card: LightingCard; isActive: boolean }) {
+  const [imgError, setImgError] = useState(false)
+
+  if (!imgError) {
+    return (
+      <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+        <Image
+          src={card.image}
+          alt={card.label}
+          fill
+          sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 160px"
+          className="object-cover"
+          onError={() => setImgError(true)}
+        />
+        {isActive && (
+          <div className="absolute inset-0 bg-[var(--color-purple)] opacity-20 pointer-events-none" />
+        )}
+      </div>
+    )
+  }
+
+  // Fallback to gradient swatch
+  return (
+    <div className={`w-full aspect-square rounded-lg bg-gradient-to-br ${card.gradient} flex-shrink-0`} />
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function LightingPicker({ value, onChange }: LightingPickerProps) {
+  const [hoveredId, setHoveredId] = useState<LightingId | null>(null)
+
   return (
     <div
-      className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2"
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3"
       role="group"
       aria-label="Lighting style selector"
     >
       {LIGHTING_CARDS.map(card => {
         const isActive = value.includes(card.id)
+        const isHovered = hoveredId === card.id
 
         return (
-          <button
-            key={card.id}
-            onClick={() => {
-              const newState = addLighting(
-                { ...initialGuideState(), lighting: value },
-                card.id,
-              )
-              onChange(newState.lighting)
-            }}
-            className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-150 cursor-pointer ${
-              isActive
-                ? 'bg-[var(--color-purple-subtle)] border-[rgba(113,50,245,0.4)]'
-                : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
-            }`}
-            aria-pressed={isActive}
-            aria-label={card.label}
-          >
-            {/* Gradient swatch — always visible (placeholder images are tiny, so gradient shows) */}
-            <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${card.gradient} flex-shrink-0`} />
-            {/* Label */}
-            <span className="text-[11px] font-medium text-center leading-tight">
-              {card.label}
-            </span>
-          </button>
+          <div key={card.id} className="relative">
+            <button
+              onClick={() => {
+                const newState = addLighting(
+                  { ...initialGuideState(), lighting: value },
+                  card.id,
+                )
+                onChange(newState.lighting)
+              }}
+              onMouseEnter={() => setHoveredId(card.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              onFocus={() => setHoveredId(card.id)}
+              onBlur={() => setHoveredId(null)}
+              className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 cursor-pointer w-full ${
+                isActive
+                  ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
+                  : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
+              }`}
+              aria-pressed={isActive}
+              aria-label={`${card.label}: ${card.description}`}
+            >
+              <LightingThumbnail card={card} isActive={isActive} />
+              <span className="text-[11px] font-medium text-center leading-tight">
+                {card.label}
+              </span>
+            </button>
+
+            {/* Tooltip */}
+            {isHovered && (
+              <div
+                className="
+                  absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
+                  px-2 py-1 rounded-md text-[11px] leading-snug text-center
+                  bg-[var(--color-hover)] border border-[var(--color-border)]
+                  text-[var(--color-text)] whitespace-nowrap pointer-events-none
+                  shadow-lg
+                "
+                role="tooltip"
+              >
+                {card.description}
+                {/* Arrow */}
+                <span
+                  className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"
+                  aria-hidden="true"
+                />
+              </div>
+            )}
+          </div>
         )
       })}
     </div>

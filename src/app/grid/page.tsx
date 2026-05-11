@@ -232,12 +232,12 @@ export default function GridPage() {
 
           {/* Select / Draw mode */}
           <button onClick={() => setDrawingState(s => ({ ...s, tool: 'select' }))}
-            className={`p-1.5 rounded-lg transition-colors ${drawingState.tool === 'select' ? 'bg-[#a78bfa] text-white' : 'text-[#555] hover:text-white hover:bg-white/[0.07]'}`}
+            className={`p-1.5 rounded-lg transition-colors ${drawingState.tool === 'select' ? 'bg-[#FFD700] text-[#1a1a1a]' : 'text-[#555] hover:text-white hover:bg-white/[0.07]'}`}
             title="選取網格">
             <MousePointer className="w-3.5 h-3.5"/>
           </button>
           <button onClick={() => setDrawingState(s => ({ ...s, tool: s.tool === 'select' ? 'pen' : s.tool }))}
-            className={`p-1.5 rounded-lg transition-colors ${drawingState.tool !== 'select' ? 'bg-[#a78bfa] text-white' : 'text-[#555] hover:text-white hover:bg-white/[0.07]'}`}
+            className={`p-1.5 rounded-lg transition-colors ${drawingState.tool !== 'select' ? 'bg-[#FFD700] text-[#1a1a1a]' : 'text-[#555] hover:text-white hover:bg-white/[0.07]'}`}
             title="塗鴉工具">
             <Pen className="w-3.5 h-3.5"/>
           </button>
@@ -252,7 +252,7 @@ export default function GridPage() {
               <div className="w-px h-4 bg-white/[0.08] mx-1"/>
               {DRAW_TOOLS.map(({ tool, icon: Icon, title }) => (
                 <button key={tool} onClick={() => setDrawingState(s => ({ ...s, tool }))}
-                  className={`p-1.5 rounded-lg transition-colors ${drawingState.tool === tool ? 'bg-[#a78bfa] text-white' : 'text-[#555] hover:text-white hover:bg-white/[0.07]'}`}
+                  className={`p-1.5 rounded-lg transition-colors ${drawingState.tool === tool ? 'bg-[#FFD700] text-[#1a1a1a]' : 'text-[#555] hover:text-white hover:bg-white/[0.07]'}`}
                   title={title}>
                   <Icon className="w-3.5 h-3.5"/>
                 </button>
@@ -263,7 +263,7 @@ export default function GridPage() {
                 className="w-6 h-6 rounded cursor-pointer border-0" title="顏色"/>
               <input type="range" min={2} max={12} value={drawingState.strokeWidth}
                 onChange={e => setDrawingState(s => ({ ...s, strokeWidth: +e.target.value }))}
-                className="w-16 accent-[#a78bfa]" title="筆刷粗細"/>
+                className="w-16 accent-[#FFD700]" title="筆刷粗細"/>
             </>
           )}
         </div>

@@ -36,6 +36,17 @@ export type LightingId =
   | 'high-key'
   | 'low-key'
 
+export type LightDirectionId =
+  | 'front'
+  | 'back'
+  | 'side-left'
+  | 'side-right'
+  | 'top'
+  | 'bottom'
+  | 'rim'
+  | '45-front-left'
+  | '45-front-right'
+
 export type StyleId =
   | 'cinematic'
   | 'editorial'
@@ -97,6 +108,9 @@ export interface GuideState {
   /** Section 4: Light (max 2, FIFO eviction) */
   lighting: LightingId[]
 
+  /** Section 4b: Light Direction (single-select, toggle) */
+  lightDirection: LightDirectionId | null
+
   /** Section 5: Style (single-select, toggle) */
   style: StyleId | null
 
@@ -122,7 +136,8 @@ export interface PromptSegments {
   shotSize:    string | null
   camera:      string | null
   angle:       string | null
-  lighting:    string | null
+  lighting:        string | null
+  lightDirection:  string | null
   style:       string | null
   dof:         string | null
   mood:        string | null

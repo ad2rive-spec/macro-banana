@@ -79,7 +79,7 @@ export function UseCasePicker({ value, onChange }: UseCasePickerProps) {
             className={[
               'flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer',
               isActive
-                ? 'bg-[var(--color-purple-subtle)] border-[rgba(113,50,245,0.4)]'
+                ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
                 : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]',
             ].join(' ')}
             aria-pressed={isActive}

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
@@ -10,7 +10,7 @@ const NAV = [
   { href: '/grid',   label: 'Grid',   icon: 'lucide:grid-3x3' },
 ]
 
-// Mock user — replace with real auth later
+// Mock user ??replace with real auth later
 const MOCK_USER = { name: 'Wayne Lin', email: 'wayne@macrobanana.ai', groups: 2 }
 
 const RESOLUTIONS = ['480p', '720p', '1080p', '2K']
@@ -72,7 +72,7 @@ function UserPopover() {
   const chipCls = (active: boolean) =>
     `px-2.5 py-1 rounded-lg text-[11px] font-medium cursor-pointer border transition-all
      ${active
-       ? 'bg-[var(--color-purple-subtle)] border-[rgba(113,50,245,0.4)] text-purple-300'
+       ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)] text-purple-300'
        : 'bg-[var(--color-raised)] border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)]'}`
 
   return (
@@ -80,7 +80,7 @@ function UserPopover() {
       {/* Avatar button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-8 h-8 rounded-full bg-[var(--color-purple)] flex items-center justify-center text-white text-[13px] font-bold border-none cursor-pointer hover:opacity-90 transition-opacity select-none"
+        className="w-8 h-8 rounded-full bg-[var(--color-purple)] flex items-center justify-center text-[#1a1a1a] text-[13px] font-bold border-none cursor-pointer hover:opacity-90 transition-opacity select-none"
         title={MOCK_USER.name}
       >
         {initial}
@@ -92,7 +92,7 @@ function UserPopover() {
 
           {/* User info */}
           <div className="px-4 py-3.5 border-b border-white/[0.07] flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[var(--color-purple)] flex items-center justify-center text-white text-[15px] font-bold flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-[var(--color-purple)] flex items-center justify-center text-[#1a1a1a] text-[15px] font-bold flex-shrink-0">
               {initial}
             </div>
             <div className="min-w-0">
@@ -101,8 +101,8 @@ function UserPopover() {
             </div>
             {/* Groups badge */}
             <div className="ml-auto flex-shrink-0 flex items-center gap-1 bg-white/[0.06] rounded-full px-2 py-1">
-              <iconify-icon icon="lucide:users" width="11" height="11" style={{ color: '#a78bfa' }} />
-              <span className="text-[11px] text-[#a78bfa] font-semibold">{MOCK_USER.groups}</span>
+              <iconify-icon icon="lucide:users" width="11" height="11" style={{ color: '#FFD700' }} />
+              <span className="text-[11px] text-[#FFD700] font-semibold">{MOCK_USER.groups}</span>
             </div>
           </div>
 
@@ -118,14 +118,14 @@ function UserPopover() {
                   <input type="url" value={s.apiBaseUrl}
                     onChange={e => upd('apiBaseUrl', e.target.value)}
                     placeholder="http://localhost:3001"
-                    className="w-full bg-[#0d0d12] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[12px] text-white outline-none focus:border-[#a78bfa] transition-colors placeholder:text-[#333]" />
+                    className="w-full bg-[#0d0d12] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[12px] text-white outline-none focus:border-[#FFD700] transition-colors placeholder:text-[#333]" />
                 </div>
                 <div>
                   <label className="text-[11px] text-[#555] block mb-1">Webhook URL <span className="text-[#333]">(optional)</span></label>
                   <input type="url" value={s.webhookUrl}
                     onChange={e => upd('webhookUrl', e.target.value)}
                     placeholder="https://your-server.com/webhook"
-                    className="w-full bg-[#0d0d12] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[12px] text-white outline-none focus:border-[#a78bfa] transition-colors placeholder:text-[#333]" />
+                    className="w-full bg-[#0d0d12] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[12px] text-white outline-none focus:border-[#FFD700] transition-colors placeholder:text-[#333]" />
                 </div>
               </div>
             </div>
@@ -171,11 +171,11 @@ function UserPopover() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-[11px] text-[#555]">Duration</label>
-                    <span className="text-[11px] text-[#a78bfa] font-semibold">{s.defaultDuration}s</span>
+                    <span className="text-[11px] text-[#FFD700] font-semibold">{s.defaultDuration}s</span>
                   </div>
                   <input type="range" min={4} max={15} value={s.defaultDuration}
                     onChange={e => upd('defaultDuration', +e.target.value)}
-                    className="w-full accent-[#a78bfa] cursor-pointer" />
+                    className="w-full accent-[#FFD700] cursor-pointer" />
                   <div className="flex justify-between text-[10px] text-[#333] mt-0.5"><span>4s</span><span>15s</span></div>
                 </div>
               </div>
@@ -184,8 +184,8 @@ function UserPopover() {
             {/* Save + Sign out */}
             <div className="px-4 py-3 border-t border-white/[0.07] mt-3 flex gap-2">
               <button onClick={handleSave}
-                className="flex-1 py-2 rounded-xl bg-[#a78bfa] hover:bg-[#9370f0] text-white text-[12px] font-bold border-none cursor-pointer transition-colors">
-                {saved ? '✓ Saved' : 'Save Settings'}
+                className="flex-1 py-2 rounded-xl bg-[#FFD700] hover:bg-[#CC9900] text-[#1a1a1a] text-[12px] font-bold border-none cursor-pointer transition-colors">
+                {saved ? '??Saved' : 'Save Settings'}
               </button>
               <button
                 className="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] text-[#555] hover:text-[#888] text-[12px] border-none cursor-pointer transition-colors"
@@ -223,10 +223,10 @@ export function Navbar() {
   const dotColor = online === null ? 'bg-[#555]' : online ? 'bg-[var(--color-green)] shadow-[0_0_6px_var(--color-green)]' : 'bg-red-500 shadow-[0_0_6px_#f87171]'
 
   return (
-    <header className="h-12 flex-shrink-0 flex items-center gap-6 px-5 border-b border-[var(--color-border)] bg-[var(--color-surface)] z-50">
-      <div className="flex items-center gap-2 mr-2">
-        <div className="w-6 h-6 rounded-md bg-[var(--color-purple)] flex items-center justify-center text-white text-xs font-bold">🍌</div>
-        <span className="font-bold text-sm tracking-tight text-[var(--color-text)]">
+    <header className="h-12 flex-shrink-0 flex items-center gap-3 sm:gap-6 px-3 sm:px-5 border-b border-[var(--color-border)] bg-[var(--color-surface)] z-50">
+      <div className="flex items-center gap-2 mr-1 sm:mr-2">
+        <span className="text-xl flex-shrink-0">🍌</span>
+        <span className="hidden sm:block font-bold text-sm tracking-tight text-[var(--color-text)]">
           Macro <span className="text-[var(--color-faint)] font-normal">Banana</span>
         </span>
       </div>
@@ -236,12 +236,13 @@ export function Navbar() {
           const active = pathname === href || (href === '/studio' && pathname === '/')
           return (
             <Link key={href} href={href}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 no-underline
+              aria-label={label}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 no-underline
                 ${active
                   ? 'bg-[var(--color-raised)] text-[var(--color-text)]'
                   : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}>
               <iconify-icon icon={icon} width="14" height="14" />
-              {label}
+              <span className="hidden sm:inline">{label}</span>
             </Link>
           )
         })}

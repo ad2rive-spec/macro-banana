@@ -9,6 +9,7 @@ import type {
   ShotSizeId,
   AngleId,
   LightingId,
+  LightDirectionId,
   StyleId,
   UseCaseId,
   MoodId,
@@ -51,6 +52,18 @@ export const LIGHTING_TERMS: Record<LightingId, string> = {
   'rembrandt':    'rembrandt lighting',
   'high-key':     'high-key lighting',
   'low-key':      'low-key lighting',
+}
+
+export const LIGHT_DIRECTION_TERMS: Record<LightDirectionId, string> = {
+  'front':          'front lighting',
+  'back':           'backlit, rim-lit from behind',
+  'side-left':      'side lighting from the left',
+  'side-right':     'side lighting from the right',
+  'top':            'top-down overhead lighting',
+  'bottom':         'underlighting from below',
+  'rim':            'rim lighting',
+  '45-front-left':  '45° front-left key light',
+  '45-front-right': '45° front-right key light',
 }
 
 export const STYLE_TERMS: Record<StyleId, string> = {
@@ -147,8 +160,9 @@ export function initialGuideState(): GuideState {
     shotSize:    null,
     camera:      { ...DEFAULT_CAMERA },
     angle:       null,
-    lighting:    [],
-    style:       null,
+    lighting:       [],
+    lightDirection: null,
+    style:          null,
     dof:         -1,
     mood:        null,
     useCase:     null,
@@ -225,6 +239,10 @@ export function assemblePrompt(state: GuideState): PromptSegments {
       ? state.lighting.map(id => LIGHTING_TERMS[id]).join(', ')
       : null
 
+  const lightDirection = state.lightDirection
+    ? LIGHT_DIRECTION_TERMS[state.lightDirection]
+    : null
+
   const style = state.style ? STYLE_TERMS[state.style] : null
 
   // DOF is omitted when camera.aperture is already set (prevents duplicate aperture language)
@@ -256,6 +274,7 @@ export function assemblePrompt(state: GuideState): PromptSegments {
     cameraStr,
     angle,
     lightingStr,
+    lightDirection,
     style,
     dof,
     mood,
@@ -271,7 +290,8 @@ export function assemblePrompt(state: GuideState): PromptSegments {
     shotSize,
     camera:      cameraStr,
     angle,
-    lighting:    lightingStr,
+    lighting:        lightingStr,
+    lightDirection,
     style,
     dof,
     mood,

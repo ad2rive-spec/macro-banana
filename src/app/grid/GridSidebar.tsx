@@ -19,7 +19,7 @@ function CopyBtn({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="ml-auto p-1 hover:bg-white/[0.06] rounded text-[#555] hover:text-[#a78bfa] transition-colors">
+      className="ml-auto p-1 hover:bg-white/[0.06] rounded text-[#555] hover:text-[#FFD700] transition-colors">
       {copied ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
     </button>
   )
@@ -44,7 +44,7 @@ function NumInput({ label, value, onChange, min = 0, max = 9999, step = 1, icon,
           onChange={e => { setLocal(e.target.value); const n = parseFloat(e.target.value); if (!isNaN(n)) onChange(n) }}
           onFocus={() => setFocused(true)}
           onBlur={() => { setFocused(false); setLocal(value.toString()) }}
-          className="w-full bg-[#0d0d12] border border-white/[0.08] text-[#f0f0f5] text-[13px] font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#a78bfa] focus:border-[#a78bfa] transition-all appearance-none pr-7" />
+          className="w-full bg-[#0d0d12] border border-white/[0.08] text-[#f0f0f5] text-[13px] font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all appearance-none pr-7" />
         {suffix && <span className="absolute right-2 top-1.5 text-[11px] text-[#555] pointer-events-none">{suffix}</span>}
       </div>
     </div>
@@ -95,7 +95,7 @@ export function GridSidebar({ config, setConfig, onDownload, onSendToStudio, isD
           <h2 className={sectionTitle}>畫布尺寸</h2>
           <div className="relative">
             <select
-              className="w-full appearance-none bg-[#16161f] text-[#bbb] text-[12px] border border-white/[0.08] rounded-lg px-3 py-2 pr-7 focus:outline-none focus:ring-1 focus:ring-[#a78bfa] cursor-pointer"
+              className="w-full appearance-none bg-[#16161f] text-[#bbb] text-[12px] border border-white/[0.08] rounded-lg px-3 py-2 pr-7 focus:outline-none focus:ring-1 focus:ring-[#FFD700] cursor-pointer"
               defaultValue=""
               onChange={e => {
                 const id = e.target.value; if (!id) return
@@ -114,8 +114,8 @@ export function GridSidebar({ config, setConfig, onDownload, onSendToStudio, isD
             <ChevronDown className="absolute right-2 top-2.5 w-3 h-3 text-[#555] pointer-events-none" />
           </div>
           <div className="grid grid-cols-2 gap-2.5">
-            <NumInput label="寬度" icon={<ArrowLeftRight className="w-3 h-3 text-[#a78bfa]/60"/>} value={config.width}  onChange={v => upd('width', v)}  suffix="px" />
-            <NumInput label="高度" icon={<ArrowUpDown    className="w-3 h-3 text-[#a78bfa]/60"/>} value={config.height} onChange={v => upd('height', v)} suffix="px" />
+            <NumInput label="寬度" icon={<ArrowLeftRight className="w-3 h-3 text-[#FFD700]/60"/>} value={config.width}  onChange={v => upd('width', v)}  suffix="px" />
+            <NumInput label="高度" icon={<ArrowUpDown    className="w-3 h-3 text-[#FFD700]/60"/>} value={config.height} onChange={v => upd('height', v)} suffix="px" />
           </div>
           {config.backgroundImage && (
             <button onClick={() => { const img = new Image(); img.onload = () => setConfig(p => ({ ...p, width: img.naturalWidth, height: img.naturalHeight })); img.src = config.backgroundImage! }}
@@ -130,8 +130,8 @@ export function GridSidebar({ config, setConfig, onDownload, onSendToStudio, isD
           <h2 className={`${sectionTitle} ${divider}`}>背景參考圖</h2>
           {!config.backgroundImage ? (
             <button onClick={() => fileRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 border border-dashed border-white/[0.1] rounded-xl p-4 hover:border-[#a78bfa]/50 hover:bg-white/[0.03] transition-all group">
-              <Upload className="w-4 h-4 text-[#444] group-hover:text-[#a78bfa]" />
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-white/[0.1] rounded-xl p-4 hover:border-[#FFD700]/50 hover:bg-white/[0.03] transition-all group">
+              <Upload className="w-4 h-4 text-[#444] group-hover:text-[#FFD700]" />
               <span className="text-[12px] text-[#555] group-hover:text-[#888]">上傳圖片</span>
             </button>
           ) : (
@@ -178,18 +178,18 @@ export function GridSidebar({ config, setConfig, onDownload, onSendToStudio, isD
         <section className="space-y-3">
           <h2 className={`${sectionTitle} ${divider}`}>網格佈局</h2>
           <div className="grid grid-cols-2 gap-2.5">
-            <NumInput label="欄數" icon={<Columns className="w-3 h-3 text-[#a78bfa]/60"/>} value={config.columns} onChange={v => upd('columns', Math.max(1, v))} />
-            <NumInput label="列數" icon={<Rows    className="w-3 h-3 text-[#a78bfa]/60"/>} value={config.rows}    onChange={v => upd('rows',    Math.max(1, v))} />
-            <NumInput label="欄間距" icon={<MoveHorizontal className="w-3 h-3 text-[#a78bfa]/60"/>} value={config.colGap} onChange={v => upd('colGap', v)} suffix="px" />
-            <NumInput label="列間距" icon={<MoveVertical   className="w-3 h-3 text-[#a78bfa]/60"/>} value={config.rowGap} onChange={v => upd('rowGap', v)} suffix="px" />
+            <NumInput label="欄數" icon={<Columns className="w-3 h-3 text-[#FFD700]/60"/>} value={config.columns} onChange={v => upd('columns', Math.max(1, v))} />
+            <NumInput label="列數" icon={<Rows    className="w-3 h-3 text-[#FFD700]/60"/>} value={config.rows}    onChange={v => upd('rows',    Math.max(1, v))} />
+            <NumInput label="欄間距" icon={<MoveHorizontal className="w-3 h-3 text-[#FFD700]/60"/>} value={config.colGap} onChange={v => upd('colGap', v)} suffix="px" />
+            <NumInput label="列間距" icon={<MoveVertical   className="w-3 h-3 text-[#FFD700]/60"/>} value={config.rowGap} onChange={v => upd('rowGap', v)} suffix="px" />
           </div>
         </section>
 
         {/* Selection stats */}
         {selStats && (
-          <section className="bg-[#a78bfa]/[0.07] rounded-xl p-3 border border-[#a78bfa]/20">
+          <section className="bg-[#FFD700]/[0.07] rounded-xl p-3 border border-[#FFD700]/20">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[10px] font-semibold text-[#a78bfa] uppercase flex items-center gap-1.5 tracking-widest">
+              <h3 className="text-[10px] font-semibold text-[#FFD700] uppercase flex items-center gap-1.5 tracking-widest">
                 <MousePointerClick className="w-3 h-3"/>選取區域
               </h3>
               <button onClick={onClearSelection}
@@ -202,11 +202,11 @@ export function GridSidebar({ config, setConfig, onDownload, onSendToStudio, isD
                 <div><span className="text-[#555] block text-[11px]">寬度</span><span className="font-mono text-[#f0f0f5]">{selStats.w.toFixed(1)}px</span></div>
                 <div><span className="text-[#555] block text-[11px]">高度</span><span className="font-mono text-[#f0f0f5]">{selStats.h.toFixed(1)}px</span></div>
               </div>
-              <div className="pt-2 border-t border-[#a78bfa]/15 space-y-1.5">
+              <div className="pt-2 border-t border-[#FFD700]/15 space-y-1.5">
                 <div className="flex items-center justify-between"><span className="text-[#555] text-[11px]">X 軸 (%)</span><CopyBtn text={selStats.xStr}/></div>
-                <div className="font-mono text-[#a78bfa]/80 text-[11px]">{selStats.xStr}</div>
+                <div className="font-mono text-[#FFD700]/80 text-[11px]">{selStats.xStr}</div>
                 <div className="flex items-center justify-between"><span className="text-[#555] text-[11px]">Y 軸 (%)</span><CopyBtn text={selStats.yStr}/></div>
-                <div className="font-mono text-[#a78bfa]/80 text-[11px]">{selStats.yStr}</div>
+                <div className="font-mono text-[#FFD700]/80 text-[11px]">{selStats.yStr}</div>
               </div>
             </div>
           </section>
@@ -218,7 +218,7 @@ export function GridSidebar({ config, setConfig, onDownload, onSendToStudio, isD
             <Maximize className="w-3 h-3"/>統計
           </h3>
           <div className="space-y-1.5 text-[12px]">
-            <div className="flex justify-between"><span className="text-[#555]">欄寬</span><span className="font-mono text-[#bbb]">{colW.toFixed(1)}px <span className="text-[#a78bfa]">({contentW > 0 ? ((colW / contentW) * 100).toFixed(1) : 0}%)</span></span></div>
+            <div className="flex justify-between"><span className="text-[#555]">欄寬</span><span className="font-mono text-[#bbb]">{colW.toFixed(1)}px <span className="text-[#FFD700]">({contentW > 0 ? ((colW / contentW) * 100).toFixed(1) : 0}%)</span></span></div>
             <div className="flex justify-between"><span className="text-[#555]">內容寬</span><span className="font-mono text-[#bbb]">{contentW}px</span></div>
             <div className="flex justify-between"><span className="text-[#555]">列高</span><span className="font-mono text-[#bbb]">{rowH.toFixed(1)}px</span></div>
           </div>
@@ -238,7 +238,7 @@ export function GridSidebar({ config, setConfig, onDownload, onSendToStudio, isD
           </button>
         </div>
         <button onClick={onSendToStudio} disabled={isDownloading}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 border border-[#a78bfa]/20 text-[#a78bfa] text-[13px] font-medium transition-all disabled:opacity-50">
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[#FFD700] text-[13px] font-medium transition-all disabled:opacity-50">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 10l-4 4l6 6l4-16l-16 4l6 6l4-4"/></svg>
           Send to Studio
         </button>

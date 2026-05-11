@@ -423,7 +423,7 @@ export function MaskEditor({ imageUrl, onConfirm, onCancel }: MaskEditorProps) {
             <iconify-icon icon="lucide:circle" width="8" height="8" style={{ color: '#555' }} />
             <input type="range" min={8} max={120} step={4} value={brushSize}
               onChange={e => setBrushSize(+e.target.value)}
-              className="flex-1 accent-[#a78bfa] cursor-pointer" />
+              className="flex-1 accent-[#FFD700] cursor-pointer" />
             <iconify-icon icon="lucide:circle" width="14" height="14" style={{ color: '#555' }} />
             <span className="text-[11px] text-[#555] w-8 text-right tabular-nums">{brushSize}px</span>
           </div>

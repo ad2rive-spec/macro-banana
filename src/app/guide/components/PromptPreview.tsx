@@ -7,17 +7,18 @@ import type { GuideState } from '../types'
 // ── Token colour map ──────────────────────────────────────────────────────────
 
 const TOKEN_COLORS: Record<string, string> = {
-  subject:     '#f0f0f5',
-  shotSize:    '#a78bfa',
-  camera:      '#818cf8',
-  angle:       '#38bdf8',
-  lighting:    '#fb923c',
-  style:       '#34d399',
-  dof:         '#f472b6',
-  mood:        '#e879f9',
-  useCase:     '#22d3ee',
-  constraints: '#94a3b8',
-  movement:    '#facc15',
+  subject:        '#f0f0f5',
+  shotSize:       '#FFD700',
+  camera:         '#818cf8',
+  angle:          '#38bdf8',
+  lighting:       '#fb923c',
+  lightDirection: '#fbbf24',
+  style:          '#34d399',
+  dof:            '#f472b6',
+  mood:           '#e879f9',
+  useCase:        '#22d3ee',
+  constraints:    '#94a3b8',
+  movement:       '#facc15',
 }
 
 interface PromptPreviewProps {
@@ -35,8 +36,9 @@ export function PromptPreview({ state, onReset }: PromptPreviewProps) {
     { key: 'shotSize',    text: segments.shotSize,     color: TOKEN_COLORS.shotSize },
     { key: 'camera',      text: segments.camera,       color: TOKEN_COLORS.camera },
     { key: 'angle',       text: segments.angle,        color: TOKEN_COLORS.angle },
-    { key: 'lighting',    text: segments.lighting,     color: TOKEN_COLORS.lighting },
-    { key: 'style',       text: segments.style,        color: TOKEN_COLORS.style },
+    { key: 'lighting',       text: segments.lighting,        color: TOKEN_COLORS.lighting },
+    { key: 'lightDirection', text: segments.lightDirection,  color: TOKEN_COLORS.lightDirection },
+    { key: 'style',          text: segments.style,           color: TOKEN_COLORS.style },
     { key: 'dof',         text: segments.dof,          color: TOKEN_COLORS.dof },
     { key: 'mood',        text: segments.mood,         color: TOKEN_COLORS.mood },
     { key: 'useCase',     text: segments.useCase,      color: TOKEN_COLORS.useCase },
@@ -94,7 +96,7 @@ export function PromptPreview({ state, onReset }: PromptPreviewProps) {
             disabled={isEmpty}
             className={[
               'px-4 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex-shrink-0',
-              'bg-[var(--color-purple)] text-white border-none cursor-pointer',
+              'bg-[var(--color-purple)] text-[#1a1a1a] border-none cursor-pointer',
               isEmpty ? 'opacity-35 cursor-not-allowed' : 'hover:opacity-90',
             ].join(' ')}
           >

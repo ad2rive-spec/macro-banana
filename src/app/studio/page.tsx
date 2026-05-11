@@ -131,7 +131,7 @@ const REF_LIMITS: Record<string, { max: number; desc: string }> = {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  queued: '#55556a', running: '#a78bfa', succeeded: '#4ade80', failed: '#f87171', expired: '#55556a',
+  queued: '#55556a', running: '#FFD700', succeeded: '#4ade80', failed: '#f87171', expired: '#55556a',
 }
 
 // ── Slot Wheel — single column picker ──
@@ -164,7 +164,7 @@ function SlotWheel({ items, selected, onSelect, renderItem, itemHeight = 52 }: {
       <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#17171e] to-transparent z-10 pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#17171e] to-transparent z-10 pointer-events-none" />
       {/* selection highlight */}
-      <div className="absolute inset-x-0 z-0 border-t border-b border-[#a78bfa]/30 bg-[#a78bfa]/[0.07]"
+      <div className="absolute inset-x-0 z-0 border-t border-b border-[#FFD700]/30 bg-[#FFD700]/[0.07]"
         style={{ top: itemHeight, height: itemHeight }} />
 
       <div ref={ref} className="overflow-hidden flex-1" onWheel={onWheel}>
@@ -300,7 +300,7 @@ function VideoFrameThumb({ file, className }: { file: File; className?: string }
   // fallback while loading
   return (
     <div className="w-full h-full bg-[#1a1a24] flex items-center justify-center">
-      <div className="w-3 h-3 border border-[#a78bfa]/40 border-t-[#a78bfa] rounded-full animate-spin" />
+      <div className="w-3 h-3 border border-[#FFD700]/40 border-t-[#FFD700] rounded-full animate-spin" />
     </div>
   )
 }
@@ -430,7 +430,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
 
               {task.video_url && !isVideo && onEditRegion && (
                 <button onClick={() => { onEditRegion(task); onClose() }}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 border border-[#a78bfa]/20 text-[13px] text-[#a78bfa] font-medium cursor-pointer transition-all border-none">
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[13px] text-[#FFD700] font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:pencil-ruler" width="14" height="14" />
                   Edit Region
                 </button>
@@ -449,7 +449,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
 
               {task.video_url && (
                 <a href={task.video_url} download
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 border border-[#a78bfa]/20 text-[13px] text-[#a78bfa] font-medium cursor-pointer transition-all no-underline">
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[13px] text-[#FFD700] font-medium cursor-pointer transition-all no-underline">
                   <iconify-icon icon="lucide:download" width="14" height="14" />
                   Download
                 </a>
@@ -466,6 +466,56 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Masonry grid (horizontal order) ─────────────────────────────────────────
+// Distributes items left-to-right (index % numCols) then fills each column
+// vertically, so the visual reading order matches insertion order.
+
+function MasonryGrid<T>({
+  items,
+  colWidth,
+  gap = 10,
+  renderItem,
+}: {
+  items: T[]
+  colWidth: number
+  gap?: number
+  renderItem: (item: T, index: number) => React.ReactNode
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [numCols, setNumCols] = useState(1)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const calc = () => {
+      const w = el.clientWidth
+      const cols = Math.max(1, Math.floor((w + gap) / (colWidth + gap)))
+      setNumCols(cols)
+    }
+    calc()
+    const ro = new ResizeObserver(calc)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [colWidth, gap])
+
+  // Distribute items into columns by index % numCols (horizontal order)
+  const columns: T[][] = Array.from({ length: numCols }, () => [])
+  items.forEach((item, i) => columns[i % numCols].push(item))
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ display: 'flex', gap, alignItems: 'flex-start' }}
+    >
+      {columns.map((col, ci) => (
+        <div key={ci} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap }}>
+          {col.map((item, ri) => renderItem(item, ci + ri * numCols))}
+        </div>
+      ))}
     </div>
   )
 }
@@ -500,7 +550,7 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
 
   return (
     <div
-      className="bg-[#16161f] border border-white/[0.07] rounded-2xl overflow-hidden hover:border-white/20 transition-all break-inside-avoid mb-2.5 cursor-pointer group"
+      className="bg-[#16161f] border border-white/[0.07] rounded-2xl overflow-hidden hover:border-white/20 transition-all cursor-pointer group"
       onClick={() => {
         if (task.status === 'succeeded') {
           onSeen?.(task.task_id)
@@ -549,8 +599,8 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
                 <div className="absolute top-2 left-2">
                   {task.status === 'running' ? (
                     <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                      <div className="w-3 h-3 border-[1.5px] border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-[10px] text-[#a78bfa] font-medium">Generating…</span>
+                      <div className="w-3 h-3 border-[1.5px] border-[#FFD700] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[10px] text-[#FFD700] font-medium">Generating…</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
@@ -1079,9 +1129,14 @@ function StudioPageInner() {
             <div className="flex items-center bg-white/[0.05] rounded-lg p-0.5 gap-0.5">
               {(['personal', 'group'] as const).map(w => (
                 <button key={w} onClick={() => setWorkspace(w)}
-                  className={`px-3 py-1 rounded-md text-[12px] font-medium border-none cursor-pointer transition-all
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] font-medium border-none cursor-pointer transition-all
                     ${workspace === w ? 'bg-white/15 text-white' : 'bg-transparent text-[#555] hover:text-[#888]'}`}>
-                  {w === 'personal' ? '👤 Personal' : '👥 Group'}
+                  <iconify-icon
+                    icon={w === 'personal' ? 'lucide:user' : 'lucide:users'}
+                    width="13"
+                    height="13"
+                  />
+                  {w === 'personal' ? 'Personal' : 'Group'}
                 </button>
               ))}
             </div>
@@ -1090,7 +1145,7 @@ function StudioPageInner() {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               <input type="range" min={120} max={360} step={20} value={colWidth}
                 onChange={e => setColWidth(+e.target.value)}
-                className="w-20 accent-[#a78bfa] cursor-pointer" />
+                className="w-20 accent-[#FFD700] cursor-pointer" />
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
             </div>
           </div>
@@ -1131,8 +1186,11 @@ function StudioPageInner() {
               <span className="text-[13px]">Your generations will appear here</span>
             </div>
           ) : (
-            <div style={{ columns: `auto ${colWidth}px`, columnGap: 10 }}>
-              {pagedOutputs.map(t => (
+            <MasonryGrid
+              items={pagedOutputs}
+              colWidth={colWidth}
+              gap={10}
+              renderItem={t => (
                 <OutputCard key={t.task_id} task={t}
                   isFavorite={activeFavorites.has(t.task_id)}
                   onOpen={setSelectedTask}
@@ -1140,8 +1198,8 @@ function StudioPageInner() {
                   isNew={newTaskIds.has(t.task_id)}
                   onSeen={id => setNewTaskIds(prev => { const s = new Set(prev); s.delete(id); return s })}
                 />
-              ))}
-            </div>
+              )}
+            />
           )}
 
           {/* Infinite scroll sentinel + loading indicator */}
@@ -1149,14 +1207,17 @@ function StudioPageInner() {
             <div ref={loadMoreRef} className="px-2.5 pb-2.5">
               {isLoadingMore ? (
                 /* Skeleton cards while loading more */
-                <div style={{ columns: `auto ${colWidth}px`, columnGap: 10 }}>
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="break-inside-avoid mb-2.5 rounded-2xl overflow-hidden bg-[#1a1a24]"
-                      style={{ aspectRatio: ['1/1', '3/4', '16/9', '4/5'][i % 4] }}>
+                <MasonryGrid
+                  items={Array.from({ length: 4 }, (_, i) => i)}
+                  colWidth={colWidth}
+                  gap={10}
+                  renderItem={i => (
+                    <div key={i} className="rounded-2xl overflow-hidden bg-[#1a1a24]"
+                      style={{ aspectRatio: (['1/1', '3/4', '16/9', '4/5'] as const)[i % 4] }}>
                       <div className="w-full h-full skeleton-shimmer" />
                     </div>
-                  ))}
-                </div>
+                  )}
+                />
               ) : (
                 /* Invisible trigger zone */
                 <div className="h-8" />
@@ -1211,12 +1272,12 @@ function StudioPageInner() {
                       onClick={() => { setSeedanceMode(m.id); if (m.id === 'text_to_video') setRefs([]) }}
                       className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-all cursor-pointer text-left
                         ${seedanceMode === m.id
-                          ? 'bg-[#a78bfa]/10 border-[#a78bfa]/30 text-white'
+                          ? 'bg-[#FFD700]/10 border-[#FFD700]/30 text-white'
                           : 'bg-transparent border-white/[0.06] text-[#555] hover:text-[#888] hover:border-white/10'}`}>
-                      <span className={`text-[13px] font-bold flex-shrink-0 w-4 text-center ${seedanceMode === m.id ? 'text-[#a78bfa]' : 'text-[#444]'}`}>{m.icon}</span>
+                      <span className={`text-[13px] font-bold flex-shrink-0 w-4 text-center ${seedanceMode === m.id ? 'text-[#FFD700]' : 'text-[#444]'}`}>{m.icon}</span>
                       <div className="min-w-0">
                         <div className="text-[11px] font-semibold leading-tight">{m.label}</div>
-                        <div className={`text-[9px] leading-tight ${seedanceMode === m.id ? 'text-[#a78bfa]/60' : 'text-[#333]'}`}>{m.hint}</div>
+                        <div className={`text-[9px] leading-tight ${seedanceMode === m.id ? 'text-[#FFD700]/60' : 'text-[#333]'}`}>{m.hint}</div>
                       </div>
                     </button>
                   ))}
@@ -1237,7 +1298,7 @@ function StudioPageInner() {
                             <button onClick={() => setFirstFrame(null)} className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border-none cursor-pointer text-white text-[11px]">✕</button>
                           </div>
                         ) : (
-                          <button onClick={() => firstFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#a78bfa]/50 bg-white/[0.03] hover:bg-[#a78bfa]/[0.06] flex items-center justify-center text-[#444] hover:text-[#a78bfa] transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
+                          <button onClick={() => firstFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#FFD700]/50 bg-white/[0.03] hover:bg-[#FFD700]/[0.06] flex items-center justify-center text-[#444] hover:text-[#FFD700] transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
                         )}
                         <input ref={firstFrameRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setFirstFrame(f) }} />
                       </div>
@@ -1250,7 +1311,7 @@ function StudioPageInner() {
                             <button onClick={() => setLastFrame(null)} className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border-none cursor-pointer text-white text-[11px]">✕</button>
                           </div>
                         ) : (
-                          <button onClick={() => lastFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#a78bfa]/50 bg-white/[0.03] hover:bg-[#a78bfa]/[0.06] flex items-center justify-center text-[#444] hover:text-[#a78bfa] transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
+                          <button onClick={() => lastFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#FFD700]/50 bg-white/[0.03] hover:bg-[#FFD700]/[0.06] flex items-center justify-center text-[#444] hover:text-[#FFD700] transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
                         )}
                         <input ref={lastFrameRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setLastFrame(f) }} />
                       </div>
@@ -1277,7 +1338,7 @@ function StudioPageInner() {
                               }
                             </div>
                             <button onClick={() => { const insert = tag + ' '; setPrompt(p => p.endsWith(' ') || p === '' ? p + insert : p + ' ' + insert); setTimeout(() => textareaRef.current?.focus(), 50) }}
-                              className="absolute -bottom-1 -right-1 bg-[#a78bfa] text-black text-[8px] font-bold px-1 rounded leading-tight border-none cursor-pointer hover:bg-[#c4b5fd] transition-colors z-10">{tag}</button>
+                              className="absolute -bottom-1 -right-1 bg-[#FFD700] text-black text-[8px] font-bold px-1 rounded leading-tight border-none cursor-pointer hover:bg-[#CC9900] transition-colors z-10">{tag}</button>
                             <button onClick={() => setRefs(p => p.filter((_, j) => j !== i))} className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border-none cursor-pointer text-white text-[11px] rounded-lg">✕</button>
                           </div>
                         )
@@ -1390,7 +1451,7 @@ function StudioPageInner() {
                           }
                         </span>
                         <span className="flex-1 text-[13px]">{r === 'auto' ? 'Auto' : r}</span>
-                        {ratio === r && <span className="text-[#a78bfa] text-[12px]">✓</span>}
+                        {ratio === r && <span className="text-[#FFD700] text-[12px]">✓</span>}
                       </button>
                     )
                   })}
@@ -1418,7 +1479,7 @@ function StudioPageInner() {
                           <div className="text-[13px] font-medium capitalize">{q}</div>
                           {QUALITY_META[q] && <div className="text-[11px] text-[#555] mt-0.5">{QUALITY_META[q]}</div>}
                         </div>
-                        {quality === q && <span className="text-[#a78bfa] text-[12px] flex-shrink-0">✓</span>}
+                        {quality === q && <span className="text-[#FFD700] text-[12px] flex-shrink-0">✓</span>}
                       </button>
                     ))}
                   </div>
@@ -1452,7 +1513,7 @@ function StudioPageInner() {
                         <div className="text-[13px] font-medium capitalize">{value}</div>
                         <div className="text-[11px] text-[#555] mt-0.5">{hint}</div>
                       </div>
-                      {background === value && <span className="text-[#a78bfa] text-[12px] flex-shrink-0">✓</span>}
+                      {background === value && <span className="text-[#FFD700] text-[12px] flex-shrink-0">✓</span>}
                     </button>
                   ))}
                 </div>
@@ -1476,7 +1537,7 @@ function StudioPageInner() {
                         <div className="text-[13px] font-medium">{r}</div>
                         {RES_PX[r] && <div className="text-[11px] text-[#555] mt-0.5">{RES_PX[r]}</div>}
                       </div>
-                      {resolution === r && <span className="text-[#a78bfa] text-[12px] flex-shrink-0">✓</span>}
+                      {resolution === r && <span className="text-[#FFD700] text-[12px] flex-shrink-0">✓</span>}
                     </button>
                   )
                 })}
@@ -1506,7 +1567,7 @@ function StudioPageInner() {
                         const snapped = modelOpts.durations!.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a)
                         setDur(snapped)
                       }}
-                      className="w-full cursor-pointer accent-[#a78bfa]"
+                      className="w-full cursor-pointer accent-[#FFD700]"
                     />
                     {/* tick marks for discrete models like Veo */}
                     {modelOpts.durations.length <= 5 && (
@@ -1514,7 +1575,7 @@ function StudioPageInner() {
                         {modelOpts.durations.map(d => (
                           <button key={d} onClick={() => setDur(d)}
                             className={`text-[10px] border-none cursor-pointer bg-transparent transition-colors
-                              ${duration === d ? 'text-[#a78bfa] font-bold' : 'text-[#444] hover:text-[#888]'}`}>
+                              ${duration === d ? 'text-[#FFD700] font-bold' : 'text-[#444] hover:text-[#888]'}`}>
                             {d}s
                           </button>
                         ))}

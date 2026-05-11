@@ -62,7 +62,7 @@ function ChipWithTooltip({
       className={[
         'flex flex-col items-start px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 border-none cursor-pointer flex-shrink-0',
         active
-          ? 'bg-[var(--color-purple)] text-white'
+          ? 'bg-[var(--color-purple)] text-[#1a1a1a]'
           : 'bg-[var(--color-raised)] text-[var(--color-muted)] hover:text-[var(--color-text)]',
       ].join(' ')}
     >
@@ -86,7 +86,7 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       className={[
         'px-3 py-1 rounded-full text-[12px] font-medium flex-shrink-0 transition-all duration-150 border-none cursor-pointer',
         active
-          ? 'bg-[var(--color-purple)] text-white'
+          ? 'bg-[var(--color-purple)] text-[#1a1a1a]'
           : 'bg-[var(--color-raised)] text-[var(--color-muted)] hover:text-[var(--color-text)]',
       ].join(' ')}
     >

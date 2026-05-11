@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --color-purple:        #7132f5;
-  --color-purple-dark:   #5a28c4;
-  --color-purple-subtle: rgba(113, 50, 245, 0.18);
+  --color-purple:        #FFD700;
+  --color-purple-dark:   #CC9900;
+  --color-purple-subtle: rgba(255, 215, 0, 0.15);
   --color-green:         #4ade80;
 
   --color-base:    #0d0d12;
@@ -30,8 +30,8 @@ body { -webkit-font-smoothing: antialiased; background: var(--color-base); color
 }
 .chip.active {
   background: var(--color-purple-subtle);
-  border-color: rgba(113, 50, 245, 0.4);
-  @apply text-purple-300;
+  border-color: rgba(255, 215, 0, 0.4);
+  @apply text-[#FFE566];
 }
 
 /* Scrollbar */::-webkit-scrollbar { width: 4px; height: 4px; }

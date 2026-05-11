@@ -115,7 +115,7 @@ export function MovementPicker({ value, onChange, mediaTab }: MovementPickerProp
             onClick={() => onChange(isActive ? null : movement.id)}
             className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 cursor-pointer ${
               isActive
-                ? 'bg-[var(--color-purple-subtle)] border-[rgba(113,50,245,0.4)]'
+                ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
                 : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
             }`}
             aria-pressed={isActive}

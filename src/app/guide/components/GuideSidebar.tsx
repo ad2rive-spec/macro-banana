@@ -87,7 +87,7 @@ export function GuideSidebar({ state, mediaTab }: GuideSidebarProps) {
                 'flex-shrink-0 whitespace-nowrap transition-all duration-200',
                 'border-none cursor-pointer',
                 isActive
-                  ? 'bg-[var(--color-purple)] text-white'
+                  ? 'bg-[var(--color-purple)] text-[#1a1a1a]'
                   : filled
                     ? 'bg-[var(--color-raised)] text-[var(--color-text)]'
                     : 'bg-transparent text-[var(--color-muted)] hover:bg-[var(--color-raised)] hover:text-[var(--color-text)]',

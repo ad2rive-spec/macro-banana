@@ -6,6 +6,7 @@ import { ShotSizeSelector } from './components/ShotSizeSelector'
 import { AngleSelector } from './components/AngleSelector'
 import { DOFSlider } from './components/DOFSlider'
 import { LightingPicker } from './components/LightingPicker'
+import { LightDirectionPicker } from './components/LightDirectionPicker'
 import { StylePicker } from './components/StylePicker'
 import { MoodPicker } from './components/MoodPicker'
 import { UseCasePicker } from './components/UseCasePicker'
@@ -81,7 +82,7 @@ export default function GuidePage() {
               className={[
                 'px-3 py-1 rounded-md text-[12px] font-medium transition-all duration-150 border-none cursor-pointer capitalize',
                 state.mediaTab === tab
-                  ? 'bg-[var(--color-purple)] text-white'
+                  ? 'bg-[var(--color-purple)] text-[#1a1a1a]'
                   : 'bg-transparent text-[var(--color-muted)] hover:text-[var(--color-text)]',
               ].join(' ')}
             >
@@ -145,12 +146,28 @@ export default function GuidePage() {
 
           {/* 4 · Light */}
           <section id="light" className="scroll-mt-24">
-            <SectionHeading label="Light" hasSelection={state.lighting.length > 0} />
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4 sm:p-6">
+            <SectionHeading
+              label="Light"
+              hasSelection={state.lighting.length > 0 || state.lightDirection !== null}
+            />
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4 sm:p-6 flex flex-col gap-6">
+              {/* 4a · Lighting style */}
               <LightingPicker
                 value={state.lighting}
                 onChange={lighting => setState(prev => ({ ...prev, lighting }))}
               />
+
+              {/* 4b · Light direction */}
+              <div className="border-t border-[var(--color-border)] pt-5">
+                <p className="text-[11px] font-semibold uppercase tracking-widest mb-3"
+                  style={{ color: 'var(--color-faint)' }}>
+                  Light Direction
+                </p>
+                <LightDirectionPicker
+                  value={state.lightDirection}
+                  onChange={lightDirection => setState(prev => ({ ...prev, lightDirection }))}
+                />
+              </div>
             </div>
           </section>
 

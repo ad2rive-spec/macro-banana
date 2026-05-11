@@ -119,7 +119,7 @@ export default function SettingsPage() {
           </div>
 
           <button type="submit"
-            className="w-full py-3 rounded-xl bg-purple text-white text-[14px] font-bold border-none cursor-pointer hover:bg-purple-dark transition-colors">
+            className="w-full py-3 rounded-xl bg-purple text-[#1a1a1a] text-[14px] font-bold border-none cursor-pointer hover:bg-purple-dark transition-colors">
             {saved ? '✓ Saved' : 'Save Settings'}
           </button>
         </form>

@@ -32,7 +32,7 @@ export function ConstraintsPicker({ value, onChange }: ConstraintsPickerProps) {
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium',
                 'transition-all duration-150 border cursor-pointer',
                 isActive
-                  ? 'bg-[var(--color-purple-subtle)] border-[rgba(113,50,245,0.4)] text-[var(--color-text)]'
+                  ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)] text-[var(--color-text)]'
                   : 'bg-[var(--color-raised)] border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-muted)]',
               ].join(' ')}
               aria-pressed={isActive}

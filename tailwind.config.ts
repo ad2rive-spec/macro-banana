@@ -8,7 +8,7 @@ const config: Config = {
         purple: {
           DEFAULT: 'var(--color-purple)',
           dark: 'var(--color-purple-dark)',
-          300: '#c4b5fd',
+          300: '#FFE566',
         },
       },
       textColor: {
