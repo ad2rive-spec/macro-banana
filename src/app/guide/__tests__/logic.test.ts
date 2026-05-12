@@ -74,7 +74,7 @@ const arbitraryCameraSettings = () =>
 const arbitrarySubject = () =>
   fc.stringMatching(/^[a-zA-Z0-9 ]{0,80}$/)
 
-const moodIds = ['warm', 'cold', 'dramatic', 'minimal', 'nostalgic', 'energetic', 'melancholic', 'ethereal'] as const
+const lightDirectionIds = ['front', 'back', 'side-left', 'side-right', 'top', 'bottom', 'rim', '45-front-left', '45-front-right'] as const
 const useCaseIds = ['editorial-photo', 'product-mockup', 'poster', 'ui-screen', 'concept-art', 'social-media', 'documentary'] as const
 const constraintIds = ['no-watermark', 'no-logos', 'no-extra-text', 'no-extra-people', 'no-retouching', 'preserve-face', 'photoreal'] as const
 
@@ -87,9 +87,9 @@ const arbitraryGuideState = (): fc.Arbitrary<GuideState> =>
     camera: arbitraryCameraSettings(),
     angle: fc.option(arbitraryAngleId(), { nil: null }),
     lighting: fc.array(arbitraryLightingId(), { minLength: 0, maxLength: 2 }).map(arr => [...new Set(arr)]),
+    lightDirection: fc.option(fc.constantFrom(...lightDirectionIds), { nil: null }),
     style: fc.option(arbitraryStyleId(), { nil: null }),
     dof: fc.constantFrom(-1, 0, 1, 2, 3, 4, 5, 6, 7, 8),
-    mood: fc.option(fc.constantFrom(...moodIds), { nil: null }),
     useCase: fc.option(fc.constantFrom(...useCaseIds), { nil: null }),
     constraints: fc.array(fc.constantFrom(...constraintIds), { minLength: 0, maxLength: 4 }).map(arr => [...new Set(arr)]),
     movement: fc.option(arbitraryMovementId(), { nil: null }),
