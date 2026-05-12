@@ -13,6 +13,8 @@ export interface LensPreset {
   label: string
   sub?: string
   emoji: string
+  /** true when the lens name already includes a fixed focal length */
+  fixedFocalLength?: boolean
 }
 
 export interface CameraSettings {
@@ -31,8 +33,6 @@ export const CAMERA_PRESETS: CameraPreset[] = [
   { id: 'nikon-f3',          label: 'Nikon F3',            sub: '35MM SLR',    emoji: '📷' },
   { id: 'canon-ae1',         label: 'Canon AE-1',          sub: '35MM SLR',    emoji: '📷' },
   { id: 'contax-t2',         label: 'Contax T2',           sub: 'COMPACT',     emoji: '📷' },
-  { id: 'polaroid-sx70',     label: 'Polaroid SX-70',      sub: 'INSTANT',     emoji: '📸' },
-  { id: 'lomo-lc-a',         label: 'Lomo LC-A',           sub: 'LOMOGRAPHY',  emoji: '📷' },
   // Digital Cinema
   { id: 'arri-alexa',        label: 'ARRI Alexa 35',       sub: 'DIGITAL',     emoji: '🎬' },
   { id: 'red-v-raptor',      label: 'RED V-RAPTOR',        sub: 'DIGITAL',     emoji: '🎬' },
@@ -43,9 +43,9 @@ export const LENS_PRESETS: LensPreset[] = [
   { id: 'spherical',    label: 'Spherical Prime',     sub: 'SPHERICAL',   emoji: '🔵' },
   { id: 'anamorphic',   label: 'Anamorphic 2x',       sub: 'ANAMORPHIC',  emoji: '🟣' },
   { id: 'vintage',      label: 'Vintage Cooke S4',    sub: 'VINTAGE',     emoji: '🟡' },
-  { id: 'macro',        label: 'Macro 100mm',         sub: 'MACRO',       emoji: '🔬' },
-  { id: 'fisheye',      label: 'Fisheye 8mm',         sub: 'FISHEYE',     emoji: '🐟' },
-  { id: 'tilt-shift',   label: 'Tilt-Shift 45mm',     sub: 'TILT-SHIFT',  emoji: '🏙️' },
+  { id: 'macro',        label: 'Macro 100mm',         sub: 'MACRO',       emoji: '🔬', fixedFocalLength: true },
+  { id: 'fisheye',      label: 'Fisheye 8mm',         sub: 'FISHEYE',     emoji: '🐟', fixedFocalLength: true },
+  { id: 'tilt-shift',   label: 'Tilt-Shift 45mm',     sub: 'TILT-SHIFT',  emoji: '🏙️', fixedFocalLength: true },
 ]
 
 export const FOCAL_LENGTHS: (number | null)[] = [null, 8, 14, 18, 24, 28, 35, 50, 85, 100, 135, 200]

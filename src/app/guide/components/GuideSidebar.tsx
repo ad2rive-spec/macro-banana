@@ -5,12 +5,10 @@ import type { GuideState, SectionMeta } from '../types'
 
 const SECTIONS: SectionMeta[] = [
   { id: 'subject',     label: 'Subject',      hasSelection: s => s.subject.trim().length > 0 },
-  { id: 'framing',     label: 'Framing',       hasSelection: s => s.shotSize !== null || s.camera.camera !== 'none' },
+  { id: 'framing',     label: 'Framing',       hasSelection: s => s.shotSize !== null || s.camera.camera !== 'none' || s.dof !== -1 },
   { id: 'angle',       label: 'Angle',         hasSelection: s => s.angle !== null },
-  { id: 'light',       label: 'Light',         hasSelection: s => s.lighting.length > 0 },
-  { id: 'mood',        label: 'Mood',          hasSelection: s => s.mood !== null },
+  { id: 'light',       label: 'Light',         hasSelection: s => s.lighting.length > 0 || s.lightDirection !== null },
   { id: 'style',       label: 'Style',         hasSelection: s => s.style !== null },
-  { id: 'dof',         label: 'DOF',           hasSelection: s => s.dof !== -1 },
   { id: 'use-case',    label: 'Use Case',      hasSelection: s => s.useCase !== null },
   { id: 'constraints', label: 'Constraints',   hasSelection: s => s.constraints.length > 0 },
   { id: 'movement',    label: 'Movement',      hasSelection: s => s.movement !== null, videoOnly: true },

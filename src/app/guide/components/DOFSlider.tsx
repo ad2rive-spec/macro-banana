@@ -21,6 +21,21 @@ const APERTURE_LABELS: Record<number, string> = {
   8:    'f/16',
 }
 
+// ── DOF image map ─────────────────────────────────────────────────────────────
+
+const DOF_IMAGES: Record<number, string> = {
+  [-1]: '/pic/guide/f1p2.png',
+  0:    '/pic/guide/f1p2.png',
+  1:    '/pic/guide/f1p4.png',
+  2:    '/pic/guide/f1p8.png',
+  3:    '/pic/guide/f2p8.png',
+  4:    '/pic/guide/f4.png',
+  5:    '/pic/guide/f5p6.png',
+  6:    '/pic/guide/f8.png',
+  7:    '/pic/guide/f11.png',
+  8:    '/pic/guide/f16.png',
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface DOFSliderProps {
@@ -31,21 +46,11 @@ interface DOFSliderProps {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/**
- * Compute background blur in pixels.
- * At f/1.2 (value=0) → 16px; at f/16 (value=8) → 0px; unset (value=-1) → 8px (neutral).
- */
-function getBlurPx(sliderValue: number): number {
-  if (sliderValue === -1) return 8
-  return Math.max(0, (8 - sliderValue) * 2)
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function DOFSlider({ value, onChange, cameraApertureSet = false }: DOFSliderProps) {
   const apertureLabel = APERTURE_LABELS[value] ?? 'Unset'
   const promptTerm    = value === -1 ? null : (DOF_MAP[value] ?? null)
-  const blurPx        = getBlurPx(value)
   const isUnset       = value === -1
 
   return (
@@ -59,71 +64,23 @@ export function DOFSlider({ value, onChange, cameraApertureSet = false }: DOFSli
           </p>
         </div>
       )}
-      {/* ── Blur preview panel ── */}
+      {/* ── DOF preview panel ── */}
       <div
         className="relative rounded-xl overflow-hidden w-full"
-        style={{ height: 120 }}
+        style={{ height: 170 }}
         aria-hidden="true"
       >
-        {/* Background layer — blurred gradient representing bokeh */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse at 30% 60%, #FFD700 0%, #3b82f6 40%, #0d0d12 80%)',
-            filter: `blur(${blurPx}px)`,
-            transform: 'scale(1.15)', // prevent blur edge clipping
-          }}
+        {/* Background DOF image */}
+        <img
+          src={DOF_IMAGES[value]}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
+          style={isUnset ? { filter: 'grayscale(1) brightness(0.5)' } : undefined}
         />
 
-        {/* Bokeh circles in background — also blurred */}
-        <div
-          className="absolute inset-0"
-          style={{ filter: `blur(${blurPx}px)`, transform: 'scale(1.15)' }}
-        >
-          <div
-            className="absolute rounded-full"
-            style={{
-              width: 28,
-              height: 28,
-              top: '15%',
-              left: '10%',
-              background: 'rgba(255, 215, 0, 0.7)',
-            }}
-          />
-          <div
-            className="absolute rounded-full"
-            style={{
-              width: 18,
-              height: 18,
-              top: '55%',
-              left: '70%',
-              background: 'rgba(59, 130, 246, 0.6)',
-            }}
-          />
-          <div
-            className="absolute rounded-full"
-            style={{
-              width: 12,
-              height: 12,
-              top: '20%',
-              left: '75%',
-              background: 'rgba(244, 114, 182, 0.5)',
-            }}
-          />
-        </div>
-
-        {/* Foreground subject — always sharp, no blur */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div
-            className="rounded-full border-2 border-white/80 bg-white/10 backdrop-blur-none"
-            style={{ width: 36, height: 36, filter: 'none' }}
-          />
-        </div>
-
-        {/* Unset overlay */}
+        {/* Unset — dark overlay with label */}
         {isUnset && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+          <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-[var(--color-muted)] text-sm font-medium">—</span>
           </div>
         )}

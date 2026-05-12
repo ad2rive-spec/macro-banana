@@ -15,7 +15,6 @@ const TOKEN_COLORS: Record<string, string> = {
   lightDirection: '#fbbf24',
   style:          '#34d399',
   dof:            '#f472b6',
-  mood:           '#e879f9',
   useCase:        '#22d3ee',
   constraints:    '#94a3b8',
   movement:       '#facc15',
@@ -30,6 +29,7 @@ interface PromptPreviewProps {
 export function PromptPreview({ state, onReset }: PromptPreviewProps) {
   const router = useRouter()
   const segments = assemblePrompt(state)
+  const warnings: string[] = []
 
   const tokens = [
     { key: 'subject',     text: segments.subject,     color: TOKEN_COLORS.subject },
@@ -40,7 +40,6 @@ export function PromptPreview({ state, onReset }: PromptPreviewProps) {
     { key: 'lightDirection', text: segments.lightDirection,  color: TOKEN_COLORS.lightDirection },
     { key: 'style',          text: segments.style,           color: TOKEN_COLORS.style },
     { key: 'dof',         text: segments.dof,          color: TOKEN_COLORS.dof },
-    { key: 'mood',        text: segments.mood,         color: TOKEN_COLORS.mood },
     { key: 'useCase',     text: segments.useCase,      color: TOKEN_COLORS.useCase },
     { key: 'constraints', text: segments.constraints,  color: TOKEN_COLORS.constraints },
     { key: 'movement',    text: segments.movement,     color: TOKEN_COLORS.movement },
@@ -76,6 +75,18 @@ export function PromptPreview({ state, onReset }: PromptPreviewProps) {
           <p className="text-[12px] text-[var(--color-faint)] italic pb-1">
             Make selections above to build your prompt
           </p>
+        )}
+
+        {/* Redundancy warnings */}
+        {warnings.length > 0 && (
+          <div className="flex flex-col gap-1 pb-1">
+            {warnings.map((msg, i) => (
+              <div key={i} className="flex items-start gap-1.5 text-[11px] text-amber-400/80 leading-snug">
+                <span className="flex-shrink-0">⚠</span>
+                <span>{msg}</span>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Action row — always on its own line */}

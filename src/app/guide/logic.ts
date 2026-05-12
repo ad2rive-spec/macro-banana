@@ -12,7 +12,6 @@ import type {
   LightDirectionId,
   StyleId,
   UseCaseId,
-  MoodId,
   MovementId,
 } from './types'
 
@@ -67,7 +66,7 @@ export const LIGHT_DIRECTION_TERMS: Record<LightDirectionId, string> = {
 }
 
 export const STYLE_TERMS: Record<StyleId, string> = {
-  'cinematic':     'cinematic widescreen',
+  'cinematic':     'cinematic',
   'editorial':     'editorial fashion style',
   'documentary':   'documentary reportage style',
   'fine-art':      'fine art painterly style',
@@ -76,6 +75,7 @@ export const STYLE_TERMS: Record<StyleId, string> = {
   'architectural': 'architectural photography style',
   'macro':         'macro abstract style',
   'vintage':       'vintage film style',
+  'minimal':       'clean minimal aesthetic',
 }
 
 export const USE_CASE_TERMS: Record<UseCaseId, string> = {
@@ -88,16 +88,6 @@ export const USE_CASE_TERMS: Record<UseCaseId, string> = {
   'documentary':     'documentary photograph',
 }
 
-export const MOOD_TERMS: Record<MoodId, string> = {
-  'warm':        'warm golden tones',
-  'cold':        'cool blue tones',
-  'dramatic':    'dramatic high contrast',
-  'minimal':     'clean minimal aesthetic',
-  'nostalgic':   'nostalgic film look',
-  'energetic':   'vibrant energetic',
-  'melancholic': 'melancholic moody atmosphere',
-  'ethereal':    'soft ethereal dreamlike',
-}
 
 /** All constraint prompt terms — user picks from these */
 export const CONSTRAINT_OPTIONS = [
@@ -163,9 +153,8 @@ export function initialGuideState(): GuideState {
     lighting:       [],
     lightDirection: null,
     style:          null,
-    dof:         -1,
-    mood:        null,
-    useCase:     null,
+    dof:            -1,
+    useCase:        null,
     constraints: [],
     movement:    null,
   }
@@ -245,13 +234,8 @@ export function assemblePrompt(state: GuideState): PromptSegments {
 
   const style = state.style ? STYLE_TERMS[state.style] : null
 
-  // DOF is omitted when camera.aperture is already set (prevents duplicate aperture language)
-  const dof =
-    state.camera.aperture !== null
-      ? null
-      : (DOF_MAP[state.dof] ?? null)
+  const dof = DOF_MAP[state.dof] ?? null
 
-  const mood    = state.mood    ? MOOD_TERMS[state.mood]       : null
   const useCase = state.useCase ? USE_CASE_TERMS[state.useCase] : null
 
   const constraintsStr =
@@ -277,7 +261,6 @@ export function assemblePrompt(state: GuideState): PromptSegments {
     lightDirection,
     style,
     dof,
-    mood,
     useCase,
     constraintsStr,
     movement,
@@ -294,7 +277,6 @@ export function assemblePrompt(state: GuideState): PromptSegments {
     lightDirection,
     style,
     dof,
-    mood,
     useCase,
     constraints: constraintsStr,
     movement,

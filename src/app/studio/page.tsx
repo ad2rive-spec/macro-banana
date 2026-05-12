@@ -21,6 +21,7 @@ const IconAudioOff = () => <iconify-icon icon="lucide:volume-x"     width="13" h
 const IconThinking = () => <iconify-icon icon="lucide:brain"        width="13" height="13" />
 const IconBackground = () => <iconify-icon icon="lucide:layers"     width="13" height="13" />
 const IconMode     = () => <iconify-icon icon="lucide:workflow"     width="13" height="13" />
+const IconSend     = () => <iconify-icon icon="lucide:send" width="18" height="18" style={{display:'block'}} />
 
 type MediaTab = 'image' | 'video'
 
@@ -771,6 +772,7 @@ function StudioPageInner() {
   const [thinking, setThinking] = useState('off')
   const [background, setBackground] = useState('auto')
   const [seedanceMode, setSeedanceMode] = useState('text_to_video')
+  const [imageRefMode, setImageRefMode] = useState<'normal' | 'omni_reference'>('normal')
   // #2: count drives batch submission
   const [count, setCount]     = useState(1)
   const [refs, setRefs]       = useState<File[]>([])
@@ -838,8 +840,10 @@ function StudioPageInner() {
 
   function switchTab(t: MediaTab) {
     setTab(t)
+    setRefs([])
     const s = typeof window !== 'undefined' ? loadSettings() : {}
     if (t === 'image') {
+      setImageRefMode('normal')
       const m = (s.defaultImageModel as string) || IMAGE_MODELS[0].value
       setModel(m)
       const opts = getModelOptions(m, 'image')
@@ -847,6 +851,7 @@ function StudioPageInner() {
       setRatio(opts.ratios.find(r => r !== 'auto') || opts.ratios[0])
       setCount(1)
     } else {
+      setSeedanceMode('text_to_video')
       const m = (s.defaultVideoModel as string) || VIDEO_MODELS[0].value
       setModel(m)
       const opts = getModelOptions(m, 'video')
@@ -1152,8 +1157,8 @@ function StudioPageInner() {
                 </button>
               ))}
             </div>
-            {/* Size slider */}
-            <div className="flex items-center gap-2">
+            {/* Size slider — hidden on mobile */}
+            <div className="hidden sm:flex items-center gap-2">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               <input type="range" min={120} max={360} step={20} value={colWidth}
                 onChange={e => setColWidth(+e.target.value)}
@@ -1163,30 +1168,42 @@ function StudioPageInner() {
           </div>
 
           {/* Row 2: media type + sort */}
-          <div className="flex items-center gap-1 px-4 pb-2">
+          <div className="flex items-center gap-1 px-4 pb-2 overflow-x-auto scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
             {/* Media type + favorites filter */}
-            {(['all', 'image', 'video', 'favorites'] as const).map(f => (
-              <button key={f} onClick={() => setMediaFilter(f)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium border-none cursor-pointer transition-all
-                  ${mediaFilter === f ? 'bg-white/10 text-white' : 'bg-transparent text-[#555] hover:text-[#888]'}`}>
-                {f === 'all'       && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>}
-                {f === 'image'     && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
-                {f === 'video'     && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="15" height="12" rx="2"/><polyline points="17 10 22 7 22 17 17 14"/></svg>}
-                {f === 'favorites' && <span className="text-[11px] leading-none">♥</span>}
-                {f === 'all' ? 'All' : f === 'image' ? 'Images' : f === 'video' ? 'Videos' : 'Favorites'}
-              </button>
-            ))}
+            {(['all', 'image', 'video', 'favorites'] as const).map(f => {
+              const isActive = mediaFilter === f
+              return (
+                <button key={f} onClick={() => setMediaFilter(f)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium border-none cursor-pointer transition-all flex-shrink-0
+                    ${isActive ? 'bg-white/10 text-white' : 'bg-transparent text-[#555] hover:text-[#888]'}`}>
+                  {f === 'all'       && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>}
+                  {f === 'image'     && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>}
+                  {f === 'video'     && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="6" width="15" height="12" rx="2"/><polyline points="17 10 22 7 22 17 17 14"/></svg>}
+                  {f === 'favorites' && <span className="text-[11px] leading-none">♥</span>}
+                  {/* label: always on desktop, only when active on mobile */}
+                  <span className={`sm:inline ${isActive ? 'inline' : 'hidden'}`}>
+                    {f === 'all' ? 'All' : f === 'image' ? 'Images' : f === 'video' ? 'Videos' : 'Favorites'}
+                  </span>
+                </button>
+              )
+            })}
 
-            <div className="w-px h-3.5 bg-white/[0.08] mx-1" />
+            <div className="w-px h-3.5 bg-white/[0.08] mx-1 flex-shrink-0" />
 
             {/* Sort: newest / oldest only */}
-            {(['newest', 'oldest'] as const).map(s => (
-              <button key={s} onClick={() => setActiveSortOrder(s)}
-                className={`px-2.5 py-1 rounded-lg text-[12px] font-medium border-none cursor-pointer transition-all
-                  ${activeSortOrder === s ? 'bg-white/10 text-white' : 'bg-transparent text-[#555] hover:text-[#888]'}`}>
-                {s === 'newest' ? '↓ Newest' : '↑ Oldest'}
-              </button>
-            ))}
+            {(['newest', 'oldest'] as const).map(s => {
+              const isActive = activeSortOrder === s
+              return (
+                <button key={s} onClick={() => setActiveSortOrder(s)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] font-medium border-none cursor-pointer transition-all flex-shrink-0
+                    ${isActive ? 'bg-white/10 text-white' : 'bg-transparent text-[#555] hover:text-[#888]'}`}>
+                  <span>{s === 'newest' ? '↓' : '↑'}</span>
+                  <span className={`sm:inline ${isActive ? 'inline' : 'hidden'}`}>
+                    {s === 'newest' ? 'Newest' : 'Oldest'}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -1261,7 +1278,7 @@ function StudioPageInner() {
             <div className="flex flex-col border-r border-white/[0.07] flex-shrink-0 p-1.5 gap-0.5">
               {([['image', <IconImage key="i"/>], ['video', <IconVideo key="v"/>]] as [MediaTab, React.ReactNode][]).map(([t, icon]) => (
                 <button key={t} onClick={() => switchTab(t)}
-                  className={`flex flex-col items-center justify-center gap-1 w-[60px] py-2.5 rounded-xl border-none cursor-pointer transition-all text-[11px] font-medium capitalize
+                  className={`flex flex-col items-center justify-center gap-0.5 w-[46px] sm:w-[60px] py-2 sm:py-2.5 rounded-xl border-none cursor-pointer transition-all text-[10px] sm:text-[11px] font-medium capitalize
                     ${tab === t ? 'text-white bg-white/[0.10]' : 'text-[#444] hover:text-[#666] bg-transparent'}`}>
                   {icon}
                   {t}
@@ -1270,9 +1287,9 @@ function StudioPageInner() {
             </div>
 
             {/* prompt area: refs strip on top, textarea below */}
-            <div className="flex-1 flex flex-col justify-center px-4 py-3 min-w-0 gap-1.5">
+            <div className="flex-1 flex flex-col justify-center px-3 sm:px-4 py-2.5 sm:py-3 min-w-0 gap-1.5">
 
-              {/* Seedance mode selector */}
+              {/* Seedance mode selector (video) */}
               {tab === 'video' && model.includes('seedance') && (
                 <div className="flex gap-1 -mx-1 mb-0.5">
                   {([
@@ -1282,26 +1299,51 @@ function StudioPageInner() {
                   ] as const).map(m => (
                     <button key={m.id}
                       onClick={() => { setSeedanceMode(m.id); if (m.id === 'text_to_video') setRefs([]) }}
-                      className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-lg border transition-all cursor-pointer text-left
+                      className={`flex-1 flex items-center justify-center sm:justify-start gap-1.5 px-1.5 sm:px-2 py-1.5 rounded-lg border transition-all cursor-pointer text-left
                         ${seedanceMode === m.id
                           ? 'bg-[#FFD700]/10 border-[#FFD700]/30 text-white'
                           : 'bg-transparent border-white/[0.06] text-[#555] hover:text-[#888] hover:border-white/10'}`}>
                       <span className={`text-[13px] font-bold flex-shrink-0 w-4 text-center ${seedanceMode === m.id ? 'text-[#FFD700]' : 'text-[#444]'}`}>{m.icon}</span>
-                      <div className="min-w-0">
+                      <div className="min-w-0 hidden sm:block">
                         <div className="text-[11px] font-semibold leading-tight">{m.label}</div>
                         <div className={`text-[9px] leading-tight ${seedanceMode === m.id ? 'text-[#FFD700]/60' : 'text-[#333]'}`}>{m.hint}</div>
                       </div>
+                      <div className={`min-w-0 sm:hidden text-[10px] font-semibold leading-tight truncate ${seedanceMode === m.id ? 'block' : 'hidden'}`}>{m.label}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Image ref mode selector */}
+              {tab === 'image' && (
+                <div className="flex gap-1 -mx-1 mb-0.5">
+                  {([
+                    { id: 'normal' as const,        icon: '✦', label: 'Text to Image', hint: 'Prompt only'              },
+                    { id: 'omni_reference' as const, icon: '@', label: 'Image to Image', hint: 'Reference images in prompt' },
+                  ]).map(m => (
+                    <button key={m.id}
+                      onClick={() => { setImageRefMode(m.id); if (m.id === 'normal') setRefs([]) }}
+                      className={`flex-1 flex items-center justify-center sm:justify-start gap-1.5 px-1.5 sm:px-2 py-1.5 rounded-lg border transition-all cursor-pointer text-left
+                        ${imageRefMode === m.id
+                          ? 'bg-[#FFD700]/10 border-[#FFD700]/30 text-white'
+                          : 'bg-transparent border-white/[0.06] text-[#555] hover:text-[#888] hover:border-white/10'}`}>
+                      <span className={`text-[13px] font-bold flex-shrink-0 w-4 text-center ${imageRefMode === m.id ? 'text-[#FFD700]' : 'text-[#444]'}`}>{m.icon}</span>
+                      <div className="min-w-0 hidden sm:block">
+                        <div className="text-[11px] font-semibold leading-tight">{m.label}</div>
+                        <div className={`text-[9px] leading-tight ${imageRefMode === m.id ? 'text-[#FFD700]/60' : 'text-[#333]'}`}>{m.hint}</div>
+                      </div>
+                      <div className={`min-w-0 sm:hidden text-[10px] font-semibold leading-tight truncate ${imageRefMode === m.id ? 'block' : 'hidden'}`}>{m.label}</div>
                     </button>
                   ))}
                 </div>
               )}
 
               {/* ── Refs area: adapts to Seedance mode ── */}
-              {!(tab === 'video' && model.includes('seedance') && seedanceMode === 'text_to_video') && (
+              {!(tab === 'video' && model.includes('seedance') && seedanceMode === 'text_to_video') && !(tab === 'image' && imageRefMode === 'normal') && (
                 <>
                   {/* First / Last Frame mode */}
                   {tab === 'video' && model.includes('seedance') && seedanceMode === 'first_last_frames' ? (
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] text-[#555] font-semibold uppercase tracking-widest w-10 flex-shrink-0">First</span>
                         {firstFrame ? (
@@ -1314,9 +1356,9 @@ function StudioPageInner() {
                         )}
                         <input ref={firstFrameRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setFirstFrame(f) }} />
                       </div>
-                      <div className="w-px h-6 bg-white/[0.07]" />
+                      <div className="hidden sm:block w-px h-6 bg-white/[0.07]" />
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-[#555] font-semibold uppercase tracking-widest w-8 flex-shrink-0">Last</span>
+                        <span className="text-[10px] text-[#555] font-semibold uppercase tracking-widest w-10 flex-shrink-0">Last</span>
                         {lastFrame ? (
                           <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 group border border-white/10">
                             <img src={URL.createObjectURL(lastFrame)} alt="" className="w-full h-full object-cover" />
@@ -1348,6 +1390,27 @@ function StudioPageInner() {
                                   ? <VideoFrameThumb file={f} />
                                   : <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
                               }
+                            </div>
+                            <button onClick={() => { const insert = tag + ' '; setPrompt(p => p.endsWith(' ') || p === '' ? p + insert : p + ' ' + insert); setTimeout(() => textareaRef.current?.focus(), 50) }}
+                              className="absolute -bottom-1 -right-1 bg-[#FFD700] text-black text-[8px] font-bold px-1 rounded leading-tight border-none cursor-pointer hover:bg-[#CC9900] transition-colors z-10">{tag}</button>
+                            <button onClick={() => setRefs(p => p.filter((_, j) => j !== i))} className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border-none cursor-pointer text-white text-[11px] rounded-lg">✕</button>
+                          </div>
+                        )
+                      })}
+                      {refs.length > 0 && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full self-center ${refs.length >= 12 ? 'text-amber-400 bg-amber-400/10' : 'text-[#555] bg-white/[0.04]'}`}>{refs.length}/12</span>}
+                    </div>
+                  ) : tab === 'image' && imageRefMode === 'omni_reference' ? (
+                    <div className="flex items-start gap-1.5 flex-wrap">
+                      {refs.length < 12 && (
+                        <button onClick={() => fileRef.current?.click()} className="w-7 h-7 rounded-full border border-white/10 bg-white/[0.07] hover:bg-white/[0.13] flex items-center justify-center text-[#777] hover:text-white transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
+                      )}
+                      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => { if (e.target.files) setRefs(p => [...p, ...Array.from(e.target.files!)].slice(0, 12)) }} />
+                      {refs.map((f, i) => {
+                        const tag = `@image${i + 1}`
+                        return (
+                          <div key={i} className="relative flex-shrink-0 group">
+                            <div className="w-9 h-9 rounded-lg overflow-hidden border border-white/10 bg-white/[0.05] flex items-center justify-center">
+                              <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
                             </div>
                             <button onClick={() => { const insert = tag + ' '; setPrompt(p => p.endsWith(' ') || p === '' ? p + insert : p + ' ' + insert); setTimeout(() => textareaRef.current?.focus(), 50) }}
                               className="absolute -bottom-1 -right-1 bg-[#FFD700] text-black text-[8px] font-bold px-1 rounded leading-tight border-none cursor-pointer hover:bg-[#CC9900] transition-colors z-10">{tag}</button>
@@ -1393,6 +1456,7 @@ function StudioPageInner() {
                 onChange={e => { setPrompt(e.target.value); autoResize(e.target) }}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate() } }}
                 placeholder={
+                  tab === 'image' && imageRefMode === 'omni_reference' ? 'Use @image1, @image2 to reference uploaded images…' :
                   tab === 'image' ? 'Describe what you want to create...' :
                   model.includes('seedance') && seedanceMode === 'omni_reference' ? 'Use @image1, @video1, @audio1 to reference uploaded files…' :
                   'Describe the video you want to create...'
@@ -1404,24 +1468,27 @@ function StudioPageInner() {
             </div>
 
             {/* Generate button */}
-            <div className="flex items-center gap-2 px-3 flex-shrink-0">
-              {/* Demo mode toggle */}
+            <div className="flex items-center gap-2 px-2 sm:px-3 flex-shrink-0">
+              {/* Demo mode toggle — hidden on mobile */}
               <button
                 onClick={() => setDemoMode(d => !d)}
                 title={demoMode ? 'Demo mode ON — click to disable' : 'Demo mode OFF — click to enable'}
-                className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer whitespace-nowrap
+                className={`hidden sm:flex h-7 px-2.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer whitespace-nowrap items-center
                   ${demoMode
                     ? 'bg-amber-400/20 border-amber-400/40 text-amber-300'
                     : 'bg-white/[0.04] border-white/10 text-[#555] hover:text-[#888]'}`}>
                 {demoMode ? '🎬 DEMO' : 'DEMO'}
               </button>
               <button onClick={handleGenerate} disabled={loading}
-                className="h-[52px] px-5 rounded-xl font-bold text-[13px] text-black border-none cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
+                className="sm:h-[52px] sm:px-5 sm:rounded-xl sm:text-[13px] sm:w-auto w-[40px] h-[40px] rounded-xl font-bold text-black border-none cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0"
                 style={{ background: loading ? '#999' : demoMode ? '#FFD700' : '#CDFF4D' }}>
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                 ) : (
-                  <>GENERATE{count > 1 ? ` ×${count}` : ''}</>
+                  <>
+                    <span className="sm:hidden flex items-center justify-center"><IconSend /></span>
+                    <span className="hidden sm:inline">GENERATE{count > 1 ? ` ×${count}` : ''}</span>
+                  </>
                 )}
               </button>
             </div>

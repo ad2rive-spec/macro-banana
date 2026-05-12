@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react'
 import { GuideSidebar } from './components/GuideSidebar'
 import { ShotSizeSelector } from './components/ShotSizeSelector'
 import { AngleSelector } from './components/AngleSelector'
-import { DOFSlider } from './components/DOFSlider'
 import { LightingPicker } from './components/LightingPicker'
 import { LightDirectionPicker } from './components/LightDirectionPicker'
 import { StylePicker } from './components/StylePicker'
-import { MoodPicker } from './components/MoodPicker'
 import { UseCasePicker } from './components/UseCasePicker'
 import { ConstraintsPicker } from './components/ConstraintsPicker'
 import { MovementPicker } from './components/MovementPicker'
@@ -115,7 +113,7 @@ export default function GuidePage() {
 
           {/* 2 · Framing */}
           <section id="framing" className="scroll-mt-24">
-            <SectionHeading label="Framing" hasSelection={state.shotSize !== null || state.camera.camera !== 'none'} />
+            <SectionHeading label="Framing" hasSelection={state.shotSize !== null || state.camera.camera !== 'none' || state.dof !== -1} />
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4 sm:p-6 flex flex-col gap-8">
               {/* Shot size — centred on wider screens */}
               <div className="flex justify-center">
@@ -128,6 +126,8 @@ export default function GuidePage() {
                 <CameraSettingsPanel
                   value={state.camera}
                   onChange={camera => setState(prev => ({ ...prev, camera }))}
+                  dof={state.dof}
+                  onDofChange={dof => setState(prev => ({ ...prev, dof }))}
                 />
               </div>
             </div>
@@ -182,30 +182,7 @@ export default function GuidePage() {
             </div>
           </section>
 
-          {/* 6 · Depth of Field */}
-          <section id="dof" className="scroll-mt-24">
-            <SectionHeading label="Depth of Field" hasSelection={state.dof !== -1} />
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4 sm:p-6">
-              <DOFSlider
-                value={state.dof}
-                onChange={dof => setState(prev => ({ ...prev, dof }))}
-                cameraApertureSet={state.camera.aperture !== null}
-              />
-            </div>
-          </section>
-
-          {/* 7 · Mood */}
-          <section id="mood" className="scroll-mt-24">
-            <SectionHeading label="Mood" hasSelection={state.mood !== null} />
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4 sm:p-6">
-              <MoodPicker
-                value={state.mood}
-                onChange={mood => setState(prev => ({ ...prev, mood }))}
-              />
-            </div>
-          </section>
-
-          {/* 8 · Use Case */}
+          {/* 6 · Use Case */}
           <section id="use-case" className="scroll-mt-24">
             <SectionHeading label="Use Case" hasSelection={state.useCase !== null} />
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4 sm:p-6">

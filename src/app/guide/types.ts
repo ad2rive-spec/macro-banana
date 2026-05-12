@@ -57,6 +57,7 @@ export type StyleId =
   | 'architectural'
   | 'macro'
   | 'vintage'
+  | 'minimal'
 
 export type UseCaseId =
   | 'editorial-photo'
@@ -66,16 +67,6 @@ export type UseCaseId =
   | 'concept-art'
   | 'social-media'
   | 'documentary'
-
-export type MoodId =
-  | 'warm'
-  | 'cold'
-  | 'dramatic'
-  | 'minimal'
-  | 'nostalgic'
-  | 'energetic'
-  | 'melancholic'
-  | 'ethereal'
 
 export type MovementId =
   | 'static'
@@ -117,10 +108,7 @@ export interface GuideState {
   /** Section 6: Depth of Field — -1 = unset, 0–8 = aperture index */
   dof: number
 
-  /** Section 7: Mood (single-select, toggle) */
-  mood: MoodId | null
-
-  /** Section 8: Use Case (single-select, toggle) */
+  /** Section 7: Use Case (single-select, toggle) */
   useCase: UseCaseId | null
 
   /** Section 9: Constraints (multi-select) */
@@ -140,7 +128,6 @@ export interface PromptSegments {
   lightDirection:  string | null
   style:       string | null
   dof:         string | null
-  mood:        string | null
   useCase:     string | null
   constraints: string | null
   movement:    string | null
