@@ -17,52 +17,52 @@ interface StyleCard {
 const STYLE_CARDS: StyleCard[] = [
   {
     id: 'cinematic',
-    image: '/pic/guide/cinematic.png',
+    image: '/pic/guide/cinematic.jpg',
     gradient: 'from-slate-900 to-gray-700',
   },
   {
     id: 'editorial',
-    image: '/pic/guide/editorial-fashion-style.png',
+    image: '/pic/guide/editorial-fashion-style.jpg',
     gradient: 'from-rose-100 to-pink-300',
   },
   {
     id: 'documentary',
-    image: '/pic/guide/documentary-reportage-style.png',
+    image: '/pic/guide/documentary-reportage-style.jpg',
     gradient: 'from-stone-500 to-stone-800',
   },
   {
     id: 'fine-art',
-    image: '/pic/guide/fine-art-painterly-style.png',
+    image: '/pic/guide/fine-art-painterly-style.jpg',
     gradient: 'from-amber-200 to-orange-400',
   },
   {
     id: 'commercial',
-    image: '/pic/guide/commercial-advertising-style.png',
+    image: '/pic/guide/commercial-advertising-style.jpg',
     gradient: 'from-sky-400 to-blue-600',
   },
   {
     id: 'street',
-    image: '/pic/guide/street-photography-style.png',
+    image: '/pic/guide/street-photography-style.jpg',
     gradient: 'from-zinc-600 to-zinc-900',
   },
   {
     id: 'architectural',
-    image: '/pic/guide/architectural-photography-style.png',
+    image: '/pic/guide/architectural-photography-style.jpg',
     gradient: 'from-slate-300 to-slate-600',
   },
   {
     id: 'macro',
-    image: '/pic/guide/macro-abstract-style.png',
+    image: '/pic/guide/macro-abstract-style.jpg',
     gradient: 'from-emerald-400 to-teal-600',
   },
   {
     id: 'vintage',
-    image: '/pic/guide/vintage-film-style.png',
+    image: '/pic/guide/vintage-film-style.jpg',
     gradient: 'from-yellow-200 to-amber-500',
   },
   {
     id: 'minimal',
-    image: '/pic/guide/clean-minimal-aesthetic.png',
+    image: '/pic/guide/clean-minimal-aesthetic.jpg',
     gradient: 'from-gray-100 to-gray-300',
   },
 ]

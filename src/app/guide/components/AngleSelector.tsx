@@ -242,13 +242,13 @@ const OTSIcon = (
 // ── Angle data ────────────────────────────────────────────────────────────────
 
 const ANGLE_DATA: { id: AngleId; image: string; icon: React.ReactNode }[] = [
-  { id: 'eye-level',  image: '/pic/guide/eye-level.png',          icon: EyeLevelIcon  },
-  { id: 'low-angle',  image: '/pic/guide/low-angle.png',          icon: LowAngleIcon  },
-  { id: 'high-angle', image: '/pic/guide/high-angle.png',         icon: HighAngleIcon },
-  { id: 'birds-eye',  image: '/pic/guide/birds-eye-view.png',     icon: BirdsEyeIcon  },
-  { id: 'worms-eye',  image: '/pic/guide/worm-eye-view.png',      icon: WormsEyeIcon  },
-  { id: 'dutch-tilt', image: '/pic/guide/dutch-tilt.png',         icon: DutchTiltIcon },
-  { id: 'ots',        image: '/pic/guide/over-the-shoulder.png',  icon: OTSIcon       },
+  { id: 'eye-level',  image: '/pic/guide/eye-level.jpg',          icon: EyeLevelIcon  },
+  { id: 'low-angle',  image: '/pic/guide/low-angle.jpg',          icon: LowAngleIcon  },
+  { id: 'high-angle', image: '/pic/guide/high-angle.jpg',         icon: HighAngleIcon },
+  { id: 'birds-eye',  image: '/pic/guide/birds-eye-view.jpg',     icon: BirdsEyeIcon  },
+  { id: 'worms-eye',  image: '/pic/guide/worm-eye-view.jpg',      icon: WormsEyeIcon  },
+  { id: 'dutch-tilt', image: '/pic/guide/dutch-tilt.jpg',         icon: DutchTiltIcon },
+  { id: 'ots',        image: '/pic/guide/over-the-shoulder.jpg',  icon: OTSIcon       },
 ]
 
 // ── Props ─────────────────────────────────────────────────────────────────────

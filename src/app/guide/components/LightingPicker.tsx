@@ -17,52 +17,52 @@ interface LightingCard {
 const LIGHTING_CARDS: LightingCard[] = [
   {
     id: 'golden-hour',
-    image: '/pic/guide/golden-hour-lighting.png',
+    image: '/pic/guide/golden-hour-lighting.jpg',
     gradient: 'from-amber-500 to-orange-600',
   },
   {
     id: 'blue-hour',
-    image: '/pic/guide/blue-hour-lighting.png',
+    image: '/pic/guide/blue-hour-lighting.jpg',
     gradient: 'from-blue-700 to-indigo-900',
   },
   {
     id: 'overcast',
-    image: '/pic/guide/overcast-diffused-lighting.png',
+    image: '/pic/guide/overcast-diffused-lighting.jpg',
     gradient: 'from-slate-400 to-slate-600',
   },
   {
     id: 'hard-studio',
-    image: '/pic/guide/hard-studio-lighting.png',
+    image: '/pic/guide/hard-studio-lighting.jpg',
     gradient: 'from-gray-100 to-gray-400',
   },
   {
     id: 'soft-studio',
-    image: '/pic/guide/soft-studio-lighting.png',
+    image: '/pic/guide/soft-studio-lighting.jpg',
     gradient: 'from-gray-200 to-gray-500',
   },
   {
     id: 'neon',
-    image: '/pic/guide/neon-cyberpunk-lighting.png',
+    image: '/pic/guide/neon-cyberpunk-lighting.jpg',
     gradient: 'from-purple-600 to-pink-500',
   },
   {
     id: 'candlelight',
-    image: '/pic/guide/candlelight-practical-lighting.png',
+    image: '/pic/guide/candlelight-practical-lighting.jpg',
     gradient: 'from-orange-400 to-red-700',
   },
   {
     id: 'rembrandt',
-    image: '/pic/guide/rembrandt-lighting.png',
+    image: '/pic/guide/rembrandt-lighting.jpg',
     gradient: 'from-amber-800 to-stone-900',
   },
   {
     id: 'high-key',
-    image: '/pic/guide/high-key-lighting.png',
+    image: '/pic/guide/high-key-lighting.jpg',
     gradient: 'from-white to-gray-200',
   },
   {
     id: 'low-key',
-    image: '/pic/guide/low-key-lighting.png',
+    image: '/pic/guide/low-key-lighting.jpg',
     gradient: 'from-gray-800 to-black',
   },
 ]
