@@ -1,6 +1,7 @@
 'use client'
 
 import { CONSTRAINT_OPTIONS } from '../logic'
+import { useT } from '@/lib/LanguageContext'
 
 interface ConstraintsPickerProps {
   value: string[]
@@ -8,6 +9,7 @@ interface ConstraintsPickerProps {
 }
 
 export function ConstraintsPicker({ value, onChange }: ConstraintsPickerProps) {
+  const t = useT()
   function toggle(id: string) {
     if (value.includes(id)) {
       onChange(value.filter(c => c !== id))
@@ -19,7 +21,7 @@ export function ConstraintsPicker({ value, onChange }: ConstraintsPickerProps) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[12px] text-[var(--color-muted)] leading-relaxed">
-        Tell the model what to avoid. These are appended to the end of your prompt as negative constraints — especially important for GPT Image 2.
+        {t('constraints.description')}
       </p>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Constraints">
         {CONSTRAINT_OPTIONS.map(opt => {
@@ -40,7 +42,7 @@ export function ConstraintsPicker({ value, onChange }: ConstraintsPickerProps) {
               {isActive && (
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-purple)] flex-shrink-0" aria-hidden="true" />
               )}
-              {opt.label}
+              {t(`constraint.${opt.id}.label`)}
             </button>
           )
         })}

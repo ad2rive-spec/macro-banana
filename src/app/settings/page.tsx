@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { loadSettings, saveSettings } from '@/services/api'
+import { useT, useLanguage } from '@/lib/LanguageContext'
+import { LANGUAGES } from '@/lib/i18n'
 
 const RESOLUTIONS = ['480p', '720p', '1080p', '2K']
 const RATIOS = ['16:9', '9:16', '4:3', '3:4', '21:9', '1:1', 'adaptive']
@@ -12,7 +14,6 @@ const IMAGE_MODELS = [
 const VIDEO_MODELS = [
   { value: 'doubao-seedance-2-0-260128',      label: 'Seedance 2.0' },
   { value: 'doubao-seedance-2-0-fast-260128', label: 'Seedance 2.0 Fast' },
-  { value: 'veo-3-1-fast',                    label: 'Veo 3.1 Fast' },
 ]
 
 interface Settings {
@@ -26,6 +27,9 @@ interface Settings {
 }
 
 export default function SettingsPage() {
+  const t = useT()
+  const { lang, setLang } = useLanguage()
+
   const [s, setS] = useState<Settings>(() => ({
     apiBaseUrl: 'http://localhost:3001',
     webhookUrl: '',
@@ -55,31 +59,48 @@ export default function SettingsPage() {
   return (
     <div className="h-full overflow-y-auto p-8 bg-base">
       <div className="max-w-[560px]">
-        <h1 className="text-[22px] font-bold tracking-tight text-text mb-1">Settings</h1>
-        <p className="text-[13px] text-faint mb-7">API configuration and defaults</p>
+        <h1 className="text-[22px] font-bold tracking-tight text-text mb-1">{t('settings.title')}</h1>
+        <p className="text-[13px] text-faint mb-7">{t('settings.subtitle')}</p>
 
         <form onSubmit={handleSave}>
+
+          {/* Language */}
           <div className="bg-panel border border-[var(--color-border)] rounded-2xl overflow-hidden mb-4">
-            <div className="px-5 py-3.5 border-b border-[var(--color-border)] text-[11px] font-bold uppercase tracking-widest text-faint">API Configuration</div>
-            <div className="p-5 flex flex-col gap-4">
-              <div>
-                <label className={labelCls}>Backend Base URL</label>
-                <input type="url" value={s.apiBaseUrl} onChange={e => set('apiBaseUrl', e.target.value)} placeholder="http://localhost:3001" className={inputCls} />
-                <p className="text-[11px] text-faint mt-1.5">⚠ Never expose your API key in the frontend — proxy through your backend</p>
-              </div>
-              <div>
-                <label className={labelCls}>Webhook URL (optional)</label>
-                <input type="url" value={s.webhookUrl} onChange={e => set('webhookUrl', e.target.value)} placeholder="https://your-server.com/webhook" className={inputCls} />
-                <p className="text-[11px] text-faint mt-1.5">Replaces polling when set</p>
+            <div className="px-5 py-3.5 border-b border-[var(--color-border)] text-[11px] font-bold uppercase tracking-widest text-faint">
+              {t('settings.language')}
+            </div>
+            <div className="p-5">
+              <div className="flex gap-2">
+                {LANGUAGES.map(l => (
+                  <button key={l.id} type="button" onClick={() => setLang(l.id)} className={`chip ${lang === l.id ? 'active' : ''}`}>
+                    {l.nativeLabel}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
           <div className="bg-panel border border-[var(--color-border)] rounded-2xl overflow-hidden mb-4">
-            <div className="px-5 py-3.5 border-b border-[var(--color-border)] text-[11px] font-bold uppercase tracking-widest text-faint">Default Parameters</div>
+            <div className="px-5 py-3.5 border-b border-[var(--color-border)] text-[11px] font-bold uppercase tracking-widest text-faint">{t('settings.apiConfig')}</div>
             <div className="p-5 flex flex-col gap-4">
               <div>
-                <label className={labelCls}>Default Image Model</label>
+                <label className={labelCls}>{t('settings.backendBaseUrl')}</label>
+                <input type="url" value={s.apiBaseUrl} onChange={e => set('apiBaseUrl', e.target.value)} placeholder="http://localhost:3001" className={inputCls} />
+                <p className="text-[11px] text-faint mt-1.5">{t('settings.backendUrlHint')}</p>
+              </div>
+              <div>
+                <label className={labelCls}>{t('settings.webhookUrl')} <span className="text-faint normal-case tracking-normal font-normal">({t('settings.webhookOptional')})</span></label>
+                <input type="url" value={s.webhookUrl} onChange={e => set('webhookUrl', e.target.value)} placeholder="https://your-server.com/webhook" className={inputCls} />
+                <p className="text-[11px] text-faint mt-1.5">{t('settings.webhookHint')}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-panel border border-[var(--color-border)] rounded-2xl overflow-hidden mb-4">
+            <div className="px-5 py-3.5 border-b border-[var(--color-border)] text-[11px] font-bold uppercase tracking-widest text-faint">{t('settings.defaultParams')}</div>
+            <div className="p-5 flex flex-col gap-4">
+              <div>
+                <label className={labelCls}>{t('settings.defaultImageModel')}</label>
                 <div className="flex flex-wrap gap-2">
                   {IMAGE_MODELS.map(m => (
                     <button key={m.value} type="button" onClick={() => set('defaultImageModel', m.value)} className={`chip ${s.defaultImageModel === m.value ? 'active' : ''}`}>{m.label}</button>
@@ -87,7 +108,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Default Video Model</label>
+                <label className={labelCls}>{t('settings.defaultVideoModel')}</label>
                 <div className="flex flex-wrap gap-2">
                   {VIDEO_MODELS.map(m => (
                     <button key={m.value} type="button" onClick={() => set('defaultVideoModel', m.value)} className={`chip ${s.defaultVideoModel === m.value ? 'active' : ''}`}>{m.label}</button>
@@ -95,7 +116,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Default Resolution</label>
+                <label className={labelCls}>{t('settings.defaultResolution')}</label>
                 <div className="flex gap-2">
                   {RESOLUTIONS.map(r => (
                     <button key={r} type="button" onClick={() => set('defaultResolution', r)} className={`chip ${s.defaultResolution === r ? 'active' : ''}`}>{r}</button>
@@ -103,7 +124,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Default Ratio</label>
+                <label className={labelCls}>{t('settings.defaultRatio')}</label>
                 <div className="flex flex-wrap gap-2">
                   {RATIOS.map(r => (
                     <button key={r} type="button" onClick={() => set('defaultRatio', r)} className={`chip ${s.defaultRatio === r ? 'active' : ''}`}>{r}</button>
@@ -111,7 +132,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Default Duration — {s.defaultDuration}s</label>
+                <label className={labelCls}>{t('settings.defaultDuration')} — {s.defaultDuration}s</label>
                 <input type="range" min={4} max={15} value={s.defaultDuration} onChange={e => set('defaultDuration', +e.target.value)} className="w-full accent-purple" />
                 <div className="flex justify-between text-[10px] text-faint mt-1"><span>4s</span><span>15s</span></div>
               </div>
@@ -120,7 +141,7 @@ export default function SettingsPage() {
 
           <button type="submit"
             className="w-full py-3 rounded-xl bg-purple text-[#1a1a1a] text-[14px] font-bold border-none cursor-pointer hover:bg-purple-dark transition-colors">
-            {saved ? '✓ Saved' : 'Save Settings'}
+            {saved ? t('settings.saved') : t('settings.save')}
           </button>
         </form>
       </div>

@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import type { AngleId } from '../types'
+import { useT } from '@/lib/LanguageContext'
 
 // ── Angle definitions ─────────────────────────────────────────────────────────
 
@@ -240,56 +241,14 @@ const OTSIcon = (
 
 // ── Angle data ────────────────────────────────────────────────────────────────
 
-const ANGLES: AngleDef[] = [
-  {
-    id: 'eye-level',
-    label: 'Eye Level',
-    description: 'Natural, neutral perspective',
-    image: '/pic/guide/eye-level.png',
-    icon: EyeLevelIcon,
-  },
-  {
-    id: 'low-angle',
-    label: 'Low Angle',
-    description: 'Empowers subject, creates drama',
-    image: '/pic/guide/low-angle.png',
-    icon: LowAngleIcon,
-  },
-  {
-    id: 'high-angle',
-    label: 'High Angle',
-    description: 'Diminishes subject, shows vulnerability',
-    image: '/pic/guide/high-angle.png',
-    icon: HighAngleIcon,
-  },
-  {
-    id: 'birds-eye',
-    label: "Bird's Eye",
-    description: 'Overhead map-like perspective',
-    image: '/pic/guide/birds-eye-view.png',
-    icon: BirdsEyeIcon,
-  },
-  {
-    id: 'worms-eye',
-    label: "Worm's Eye",
-    description: 'Extreme upward perspective',
-    image: '/pic/guide/worm-eye-view.png',
-    icon: WormsEyeIcon,
-  },
-  {
-    id: 'dutch-tilt',
-    label: 'Dutch Tilt',
-    description: 'Unease, tension, disorientation',
-    image: '/pic/guide/dutch-tilt.png',
-    icon: DutchTiltIcon,
-  },
-  {
-    id: 'ots',
-    label: 'Over-Shoulder',
-    description: 'Conversational, relational framing',
-    image: '/pic/guide/over-the-shoulder.png',
-    icon: OTSIcon,
-  },
+const ANGLE_DATA: { id: AngleId; image: string; icon: React.ReactNode }[] = [
+  { id: 'eye-level',  image: '/pic/guide/eye-level.png',          icon: EyeLevelIcon  },
+  { id: 'low-angle',  image: '/pic/guide/low-angle.png',          icon: LowAngleIcon  },
+  { id: 'high-angle', image: '/pic/guide/high-angle.png',         icon: HighAngleIcon },
+  { id: 'birds-eye',  image: '/pic/guide/birds-eye-view.png',     icon: BirdsEyeIcon  },
+  { id: 'worms-eye',  image: '/pic/guide/worm-eye-view.png',      icon: WormsEyeIcon  },
+  { id: 'dutch-tilt', image: '/pic/guide/dutch-tilt.png',         icon: DutchTiltIcon },
+  { id: 'ots',        image: '/pic/guide/over-the-shoulder.png',  icon: OTSIcon       },
 ]
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -301,7 +260,8 @@ interface AngleSelectorProps {
 
 // ── Thumbnail sub-component ───────────────────────────────────────────────────
 
-function AngleThumbnail({ angle, isActive }: { angle: AngleDef; isActive: boolean }) {
+function AngleThumbnail({ angle, isActive }: { angle: { id: AngleId; image: string; icon: React.ReactNode }; isActive: boolean }) {
+  const t = useT()
   const [imgError, setImgError] = useState(false)
 
   if (!imgError) {
@@ -309,7 +269,7 @@ function AngleThumbnail({ angle, isActive }: { angle: AngleDef; isActive: boolea
       <div className="relative w-full aspect-square rounded-lg overflow-hidden">
         <Image
           src={angle.image}
-          alt={angle.label}
+          alt={t(`angle.${angle.id}.label`)}
           fill
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 160px"
           className="object-cover"
@@ -338,6 +298,7 @@ function AngleThumbnail({ angle, isActive }: { angle: AngleDef; isActive: boolea
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function AngleSelector({ value, onChange }: AngleSelectorProps) {
+  const t = useT()
   const [hoveredId, setHoveredId] = useState<AngleId | null>(null)
 
   return (
@@ -346,9 +307,11 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
       role="group"
       aria-label="Camera angle selector"
     >
-      {ANGLES.map(angle => {
+      {ANGLE_DATA.map(angle => {
         const isActive = value === angle.id
         const isHovered = hoveredId === angle.id
+        const label = t(`angle.${angle.id}.label`)
+        const description = t(`angle.${angle.id}.description`)
 
         return (
           <div key={angle.id} className="relative">
@@ -360,22 +323,22 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
               onBlur={() => setHoveredId(null)}
               className={`
                 relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 cursor-pointer w-full
-                ${
+                \${
                   isActive
                     ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
                     : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
                 }
               `}
-              title={angle.description}
+              title={description}
               aria-pressed={isActive}
-              aria-label={`${angle.label}: ${angle.description}`}
+              aria-label={`\${label}: \${description}`}
             >
               {/* Thumbnail image with SVG icon fallback */}
               <AngleThumbnail angle={angle} isActive={isActive} />
 
               {/* Label */}
               <span className="text-[11px] font-medium text-center leading-tight">
-                {angle.label}
+                {label}
               </span>
             </button>
 
@@ -391,7 +354,7 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
                 "
                 role="tooltip"
               >
-                {angle.description}
+                {description}
                 {/* Arrow */}
                 <span
                   className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"

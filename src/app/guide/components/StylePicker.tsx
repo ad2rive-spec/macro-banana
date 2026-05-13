@@ -4,13 +4,12 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { setStyle, initialGuideState } from '../logic'
 import type { StyleId } from '../types'
+import { useT } from '@/lib/LanguageContext'
 
 // ── Style card definitions ────────────────────────────────────────────────────
 
 interface StyleCard {
   id: StyleId
-  label: string
-  description: string
   image: string   // path under /pic/guide/
   gradient: string
 }
@@ -18,71 +17,51 @@ interface StyleCard {
 const STYLE_CARDS: StyleCard[] = [
   {
     id: 'cinematic',
-    label: 'Cinematic',
-    description: 'Film-like look with dramatic contrast and letterbox feel',
     image: '/pic/guide/cinematic.png',
     gradient: 'from-slate-900 to-gray-700',
   },
   {
     id: 'editorial',
-    label: 'Editorial / Fashion',
-    description: 'High-fashion magazine aesthetic with bold, styled compositions',
     image: '/pic/guide/editorial-fashion-style.png',
     gradient: 'from-rose-100 to-pink-300',
   },
   {
     id: 'documentary',
-    label: 'Documentary',
-    description: 'Raw, candid reportage style with natural light and authenticity',
     image: '/pic/guide/documentary-reportage-style.png',
     gradient: 'from-stone-500 to-stone-800',
   },
   {
     id: 'fine-art',
-    label: 'Fine Art',
-    description: 'Painterly, gallery-quality aesthetic with artistic intent',
     image: '/pic/guide/fine-art-painterly-style.png',
     gradient: 'from-amber-200 to-orange-400',
   },
   {
     id: 'commercial',
-    label: 'Commercial',
-    description: 'Clean, polished advertising look optimised for product appeal',
     image: '/pic/guide/commercial-advertising-style.png',
     gradient: 'from-sky-400 to-blue-600',
   },
   {
     id: 'street',
-    label: 'Street Photography',
-    description: 'Gritty urban moments captured with an unposed, spontaneous feel',
     image: '/pic/guide/street-photography-style.png',
     gradient: 'from-zinc-600 to-zinc-900',
   },
   {
     id: 'architectural',
-    label: 'Architectural',
-    description: 'Precise geometry and spatial composition of built environments',
     image: '/pic/guide/architectural-photography-style.png',
     gradient: 'from-slate-300 to-slate-600',
   },
   {
     id: 'macro',
-    label: 'Macro / Abstract',
-    description: 'Extreme close-up detail revealing texture, pattern and form',
     image: '/pic/guide/macro-abstract-style.png',
     gradient: 'from-emerald-400 to-teal-600',
   },
   {
     id: 'vintage',
-    label: 'Vintage / Film',
-    description: 'Nostalgic film grain, faded tones and analogue imperfections',
     image: '/pic/guide/vintage-film-style.png',
     gradient: 'from-yellow-200 to-amber-500',
   },
   {
     id: 'minimal',
-    label: 'Minimal',
-    description: 'Clean, uncluttered composition with generous negative space and restrained palette',
     image: '/pic/guide/clean-minimal-aesthetic.png',
     gradient: 'from-gray-100 to-gray-300',
   },
@@ -98,7 +77,7 @@ function StyleThumbnail({ card, isActive }: { card: StyleCard; isActive: boolean
       <div className="relative w-full aspect-square rounded-lg overflow-hidden">
         <Image
           src={card.image}
-          alt={card.label}
+          alt=""
           fill
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 160px"
           className="object-cover"
@@ -127,6 +106,7 @@ interface StylePickerProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function StylePicker({ value, onChange }: StylePickerProps) {
+  const t = useT()
   const [hoveredId, setHoveredId] = useState<StyleId | null>(null)
 
   return (
@@ -159,12 +139,12 @@ export function StylePicker({ value, onChange }: StylePickerProps) {
                   : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
               }`}
               aria-pressed={isActive}
-              aria-label={`${card.label}: ${card.description}`}
+              aria-label={`${t(`style.${card.id}.label`)}: ${t(`style.${card.id}.description`)}`}
             >
               <StyleThumbnail card={card} isActive={isActive} />
               {/* Label */}
               <span className="text-[11px] font-medium text-center leading-tight">
-                {card.label}
+                {t(`style.${card.id}.label`)}
               </span>
             </button>
 
@@ -180,7 +160,7 @@ export function StylePicker({ value, onChange }: StylePickerProps) {
                 style={{ minWidth: '140px', maxWidth: '180px', whiteSpace: 'normal' }}
                 role="tooltip"
               >
-                {card.description}
+                {t(`style.${card.id}.description`)}
                 <span
                   className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"
                   aria-hidden="true"

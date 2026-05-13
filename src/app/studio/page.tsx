@@ -1,9 +1,11 @@
 'use client'
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { getAllAssetFiles } from '../guide/assetDB'
 import { submitTask, saveTask, loadTasks, loadSettings, getTaskStatus, type Task } from '@/services/api'
 import { usePolling } from '@/hooks/usePolling'
 import { useToast } from '@/components/Toast'
+import { useT } from '@/lib/LanguageContext'
 import { MaskEditor } from '@/components/MaskEditor'
 
 // ── Icons via Iconify (lucide set) ──
@@ -18,7 +20,6 @@ const IconQuality  = () => <iconify-icon icon="lucide:sparkles"     width="13" h
 const IconDuration = () => <iconify-icon icon="lucide:timer"        width="13" height="13" />
 const IconAudio    = () => <iconify-icon icon="lucide:volume-2"     width="13" height="13" />
 const IconAudioOff = () => <iconify-icon icon="lucide:volume-x"     width="13" height="13" />
-const IconThinking = () => <iconify-icon icon="lucide:brain"        width="13" height="13" />
 const IconBackground = () => <iconify-icon icon="lucide:layers"     width="13" height="13" />
 const IconMode     = () => <iconify-icon icon="lucide:workflow"     width="13" height="13" />
 const IconSend     = () => <iconify-icon icon="lucide:send" width="18" height="18" style={{display:'block'}} />
@@ -33,7 +34,6 @@ const IMAGE_MODELS = [
 const VIDEO_MODELS = [
   { value: 'doubao-seedance-2-0-260128',      label: 'Seedance 2.0' },
   { value: 'doubao-seedance-2-0-fast-260128', label: 'Seedance 2.0 Fast' },
-  { value: 'veo-3-1-fast',                    label: 'Veo 3.1 Fast' },
 ]
 
 // Per-model option constraints
@@ -88,12 +88,6 @@ const MODEL_OPTIONS: Record<string, ModelOptions> = {
     durations:   [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     seedanceModes: ['text_to_video', 'first_last_frames', 'omni_reference'],
   },
-  // Veo 3.1 Fast: 16:9/9:16 only, 720p/1080p/4k, 4/6/8s (1080p & 4k = 8s only)
-  'veo-3-1-fast': {
-    ratios:      ['16:9', '9:16'],
-    resolutions: ['720p', '1080p', '4k'],
-    durations:   [4, 6, 8],
-  },
 }
 
 const DEFAULT_IMG_OPTIONS: ModelOptions = {
@@ -112,7 +106,6 @@ function getModelOptions(model: string, tab: MediaTab): ModelOptions {
 }
 
 const QUALITY     = ['standard', 'high']
-const THINKING    = ['minimal', 'high']
 const BACKGROUND  = ['auto', 'transparent', 'opaque']
 const SEEDANCE_MODES = ['text_to_video', 'first_last_frames', 'omni_reference']
 const SEEDANCE_MODE_LABELS: Record<string, string> = {
@@ -128,7 +121,6 @@ const REF_LIMITS: Record<string, { max: number; desc: string }> = {
   'nano-banana-pro':                { max: 14, desc: 'Up to 14 refs (6 objects + 5 characters)' },
   'doubao-seedance-2-0-260128':     { max: 12, desc: 'Up to 12 refs (images + videos + audio)' },
   'doubao-seedance-2-0-fast-260128':{ max: 12, desc: 'Up to 12 refs (images + videos + audio)' },
-  'veo-3-1-fast':                   { max: 3,  desc: 'Up to 3 reference images' },
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -313,7 +305,6 @@ const MODEL_LABELS: Record<string, string> = {
   'nano-banana-pro': 'Nano Banana Pro',
   'doubao-seedance-2-0-260128': 'Seedance 2.0',
   'doubao-seedance-2-0-fast-260128': 'Seedance 2.0 Fast',
-  'veo-3-1-fast': 'Veo 3.1 Fast',
 }
 
 function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, onEditRegion, isPersonal }: {
@@ -325,6 +316,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
   onEditRegion?: (task: Task) => void
   isPersonal?: boolean
 }) {
+  const t = useT()
   const isVideo = task.video_url?.endsWith('.mp4') || task.video_url?.endsWith('.webm') || task.video_url?.endsWith('.mov')
 
   // close on backdrop click
@@ -340,13 +332,13 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
   }, [onClose])
 
   const meta: { label: string; value: string }[] = [
-    { label: 'Model',      value: MODEL_LABELS[task.model || ''] || task.model || '—' },
-    { label: 'Resolution', value: task.resolution || '—' },
-    { label: 'Ratio',      value: task.ratio || '—' },
-    ...(!isVideo ? [] : [{ label: 'Duration', value: task.duration ? `${task.duration}s` : '—' }]),
-    { label: 'Status',     value: task.status },
-    { label: 'Created',    value: task.created_at ? new Date(task.created_at).toLocaleString() : '—' },
-    { label: 'Task ID',    value: task.task_id },
+    { label: t('studio.param.model'),      value: MODEL_LABELS[task.model || ''] || task.model || '—' },
+    { label: t('studio.param.resolution'), value: task.resolution || '—' },
+    { label: t('studio.param.ratio'),      value: task.ratio || '—' },
+    ...(!isVideo ? [] : [{ label: t('studio.param.duration'), value: task.duration ? `${task.duration}s` : '—' }]),
+    { label: t('studio.param.status'),     value: task.status },
+    { label: t('studio.param.created'),    value: task.created_at ? new Date(task.created_at).toLocaleString() : '—' },
+    { label: t('studio.param.taskId'),     value: task.task_id },
   ]
 
   return (
@@ -358,7 +350,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07] flex-shrink-0">
-          <span className="text-[13px] font-semibold text-white">Generation Detail</span>
+          <span className="text-[13px] font-semibold text-white">{t('studio.detail.generationDetail')}</span>
           <button onClick={onClose}
             className="w-7 h-7 rounded-full bg-white/[0.07] hover:bg-white/15 border-none cursor-pointer text-[#888] hover:text-white flex items-center justify-center transition-all text-[14px]">
             ✕
@@ -375,7 +367,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 ? <video src={task.video_url} controls autoPlay className="w-full h-full object-contain" style={{ maxHeight: 'min(70vh, 600px)' }} />
                 : <img src={task.video_url} alt={task.prompt} className="w-full h-full object-contain" style={{ maxHeight: 'min(70vh, 600px)' }} />
             ) : (
-              <span className="text-[#333] text-[13px]">No preview</span>
+              <span className="text-[#333] text-[13px]">{t('studio.detail.noPreviewText')}</span>
             )}
           </div>
 
@@ -384,7 +376,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
 
             {/* Prompt */}
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#555] mb-2">Prompt</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#555] mb-2">{t('studio.detail.promptLabel')}</div>
               <p className="text-[13px] text-[#ccc] leading-relaxed whitespace-pre-wrap break-words">
                 {task.prompt || '—'}
               </p>
@@ -392,7 +384,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
 
             {/* Meta tags */}
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#555] mb-2">Parameters</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#555] mb-2">{t('studio.detail.parameters')}</div>
               <div className="flex flex-wrap gap-1.5">
                 {meta.map(m => (
                   <div key={m.label} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/[0.06]">
@@ -409,7 +401,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 <button onClick={() => { onReusePrompt(task.prompt || ''); onClose() }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:rotate-ccw" width="14" height="14" />
-                  Use Prompt in Studio
+                  {t('studio.detail.usePrompt')}
                 </button>
               )}
 
@@ -417,7 +409,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 <button onClick={() => { onUseAsRef(task.video_url!); onClose() }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:image-plus" width="14" height="14" />
-                  Use as Reference Image
+                  {t('studio.detail.useAsRefImage')}
                 </button>
               )}
 
@@ -425,7 +417,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 <button onClick={() => { onUseAsRef(task.video_url!); onClose() }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:video" width="14" height="14" />
-                  Use as Reference Video
+                  {t('studio.detail.useAsRefVideo')}
                 </button>
               )}
 
@@ -433,7 +425,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 <button onClick={() => { onEditRegion(task); onClose() }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[13px] text-[#FFD700] font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:pencil-ruler" width="14" height="14" />
-                  Edit Region
+                  {t('studio.detail.editRegion')}
                 </button>
               )}
 
@@ -444,7 +436,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:grid-3x3" width="14" height="14" />
-                  Send to Grid
+                  {t('studio.detail.sendToGrid')}
                 </button>
               )}
 
@@ -452,7 +444,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 <a href={task.video_url} download
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[13px] text-[#FFD700] font-medium cursor-pointer transition-all no-underline">
                   <iconify-icon icon="lucide:download" width="14" height="14" />
-                  Download
+                  {t('studio.detail.download')}
                 </a>
               )}
 
@@ -460,7 +452,7 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 <button onClick={() => { onAddToGroup(task); onClose() }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:users" width="14" height="14" />
-                  Add to Group
+                  {t('studio.detail.addToGroup')}
                 </button>
               )}
             </div>
@@ -530,6 +522,7 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
   isNew?: boolean
   onSeen?: (id: string) => void
 }) {
+  const t = useT()
   const isVideo = task.video_url?.endsWith('.mp4') || task.video_url?.endsWith('.webm') || task.video_url?.endsWith('.mov')
   const videoRef = useRef<HTMLVideoElement>(null)
   const [ar, setAr] = useState<string>(
@@ -613,11 +606,11 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
                   {task.status === 'running' ? (
                     <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
                       <div className="w-3 h-3 border-[1.5px] border-[#FFD700] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-[10px] text-[#FFD700] font-medium">Generating…</span>
+                      <span className="text-[10px] text-[#FFD700] font-medium">{t('studio.generating')}</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                      <span className="text-[10px] text-[#555] font-medium">Queued</span>
+                      <span className="text-[10px] text-[#555] font-medium">{t('studio.queued')}</span>
                     </div>
                   )}
                 </div>
@@ -625,7 +618,7 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
             )}
             {task.status === 'failed' && (
               <div className="text-center px-3 py-6">
-                <span className="text-[11px] text-red-400">Failed</span>
+                <span className="text-[11px] text-red-400">{t('studio.failed')}</span>
               </div>
             )}
           </>
@@ -634,7 +627,7 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
         {isNew && task.status === 'succeeded' && (
           <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-[#CDFF4D]/90 backdrop-blur-sm rounded-full px-2 py-0.5 pointer-events-none">
             <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse inline-block" />
-            <span className="text-[10px] text-black font-bold tracking-wide">NEW</span>
+            <span className="text-[10px] text-black font-bold tracking-wide">{t('studio.new')}</span>
           </div>
         )}
         {/* video badge */}
@@ -647,7 +640,7 @@ function OutputCard({ task, onOpen, isFavorite, onToggleFavorite, isNew, onSeen 
         {/* hover overlay */}
         {task.status === 'succeeded' && (
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            {!isVideo && <span className="text-white text-[12px] font-medium bg-black/50 px-3 py-1.5 rounded-full">View Details</span>}
+            {!isVideo && <span className="text-white text-[12px] font-medium bg-black/50 px-3 py-1.5 rounded-full">{t('studio.viewDetails')}</span>}
           </div>
         )}
         {/* favorite button */}
@@ -756,6 +749,7 @@ function StudioPageInner() {
   useEffect(() => setMounted(true), [])
 
   const searchParams = useSearchParams()
+  const t = useT()
   const toast = useToast()
 
   // #13: load settings defaults on init
@@ -765,11 +759,10 @@ function StudioPageInner() {
   const [prompt, setPrompt]   = useState('')
   const [model, setModel]     = useState((defaults.defaultImageModel as string) || IMAGE_MODELS[0].value)
   const [ratio, setRatio]     = useState((defaults.defaultRatio as string) || '1:1')
-  const [quality, setQuality] = useState('high')
-  const [resolution, setRes]  = useState((defaults.defaultResolution as string) || '2K')
+  const [quality, setQuality] = useState('medium')
+  const [resolution, setRes]  = useState((defaults.defaultResolution as string) || '1K')
   const [duration, setDur]    = useState((defaults.defaultDuration as number) || 5)
   const [audio, setAudio]     = useState(false)
-  const [thinking, setThinking] = useState('off')
   const [background, setBackground] = useState('auto')
   const [seedanceMode, setSeedanceMode] = useState('text_to_video')
   const [imageRefMode, setImageRefMode] = useState<'normal' | 'omni_reference'>('normal')
@@ -809,10 +802,130 @@ function StudioPageInner() {
     // Pick up incoming prompt and tab from Guide page
     const incomingPrompt = searchParams?.get('prompt')
     const incomingTab    = searchParams?.get('tab') as MediaTab | null
-    if (incomingPrompt) {
+    const incomingMode   = searchParams?.get('mode')
+    const hasPlan        = searchParams?.get('plan') === '1'
+
+    // Guide plan: consume stored plan (image or video)
+    if (hasPlan && typeof window !== 'undefined') {
+
+      // ── Image plan ──────────────────────────────────────────────────────────
+      const imageRaw = localStorage.getItem('guide_image_plan')
+      if (incomingTab === 'image' && imageRaw) {
+        try {
+          const imgPlan = JSON.parse(imageRaw) as {
+            prompt: string
+            outputSettings: { model: string; ratio: string; resolution: string; quality: string }
+            refs: Array<{ tag: string; previewUrl: string; name: string }>
+          }
+          localStorage.removeItem('guide_image_plan')
+
+          setTab('image')
+          const m = imgPlan.outputSettings?.model || IMAGE_MODELS[0].value
+          setModel(m)
+          if (imgPlan.outputSettings?.ratio) setRatio(imgPlan.outputSettings.ratio)
+          if (imgPlan.outputSettings?.resolution) setRes(imgPlan.outputSettings.resolution)
+          if (imgPlan.outputSettings?.quality) setQuality(imgPlan.outputSettings.quality)
+          if (imgPlan.prompt) setPrompt(imgPlan.prompt)
+
+          if (imgPlan.refs?.length) {
+            const refTags = imgPlan.refs.map(r => r.tag)
+            getAllAssetFiles(refTags).then(fileMap => {
+              const fetchFallbacks = imgPlan.refs
+                .filter(r => !fileMap.has(r.tag) && r.previewUrl)
+                .map(async r => {
+                  try {
+                    const res = await fetch(r.previewUrl)
+                    const blob = await res.blob()
+                    const file = new File([blob], r.name, { type: blob.type || 'image/jpeg' })
+                    fileMap.set(r.tag, file)
+                  } catch { /* silent */ }
+                })
+              Promise.all(fetchFallbacks).then(() => {
+                const ordered = imgPlan.refs
+                  .map(r => fileMap.get(r.tag))
+                  .filter((f): f is File => f != null)
+                if (ordered.length > 0) {
+                  setImageRefMode('omni_reference')
+                  setRefs(ordered.slice(0, 16))
+                }
+              })
+            })
+          }
+        } catch { /* silent */ }
+
+      // ── Video plan ──────────────────────────────────────────────────────────
+      } else {
+        const raw = localStorage.getItem('guide_video_plan')
+        if (raw) {
+          try {
+            const plan = JSON.parse(raw) as {
+              planMode: string
+              combinedPrompt: string
+              outputSettings?: { model: string; ratio: string; resolution: string }
+              shots: Array<{ duration: number; mode: string; assetRefs: string[] }>
+              assets: Array<{ tag: string; kind: string; previewUrl: string; name: string }>
+              overallStyle: string | null
+              totalDuration: number
+            }
+            localStorage.removeItem('guide_video_plan')
+
+            setTab('video')
+            const s = typeof window !== 'undefined' ? loadSettings() : {}
+            const m = plan.outputSettings?.model || (s.defaultVideoModel as string) || VIDEO_MODELS[0].value
+            setModel(m)
+            if (plan.outputSettings?.ratio) setRatio(plan.outputSettings.ratio)
+            if (plan.outputSettings?.resolution) setRes(plan.outputSettings.resolution)
+
+            if (plan.combinedPrompt) setPrompt(plan.combinedPrompt)
+
+            const planMode = plan.planMode ?? plan.shots[0]?.mode ?? 'text_to_video'
+            if (['text_to_video', 'first_last_frames', 'omni_reference'].includes(planMode)) {
+              setSeedanceMode(planMode)
+            }
+
+            const dur = planMode === 'first_last_frames'
+              ? (plan.shots[0]?.duration ?? 5)
+              : Math.min(plan.totalDuration ?? 5, 15)
+            setDur(dur)
+
+            const tags = plan.assets.map(a => a.tag)
+            getAllAssetFiles(tags).then(fileMap => {
+              const fetchFallbacks = plan.assets
+                .filter(a => !fileMap.has(a.tag) && a.previewUrl)
+                .map(async a => {
+                  try {
+                    const res = await fetch(a.previewUrl)
+                    const blob = await res.blob()
+                    const mime = a.kind === 'video' ? 'video/mp4' : 'image/jpeg'
+                    const file = new File([blob], a.name, { type: blob.type || mime })
+                    fileMap.set(a.tag, file)
+                  } catch { /* silent */ }
+                })
+
+              Promise.all(fetchFallbacks).then(() => {
+                const ordered = plan.assets
+                  .map(a => fileMap.get(a.tag))
+                  .filter((f): f is File => f !== null && f !== undefined)
+
+                if (ordered.length === 0) return
+
+                if (planMode === 'first_last_frames') {
+                  if (ordered[0]) setFirstFrame(ordered[0])
+                  if (ordered[1]) setLastFrame(ordered[1])
+                } else {
+                  setRefs(ordered.slice(0, 12))
+                }
+              })
+            })
+          } catch { /* silent */ }
+        }
+      }
+
+    } else if (incomingPrompt) {
       setPrompt(incomingPrompt)
     }
-    if (incomingTab === 'image' || incomingTab === 'video') {
+
+    if (!hasPlan && (incomingTab === 'image' || incomingTab === 'video')) {
       setTab(incomingTab)
       const s = typeof window !== 'undefined' ? loadSettings() : {}
       if (incomingTab === 'image') {
@@ -821,20 +934,29 @@ function StudioPageInner() {
       } else {
         const m = (s.defaultVideoModel as string) || VIDEO_MODELS[0].value
         setModel(m)
+        if (incomingMode && ['text_to_video', 'first_last_frames', 'omni_reference'].includes(incomingMode)) {
+          setSeedanceMode(incomingMode)
+        }
       }
     }
 
-    // Pick up image sent from Grid page
+    // Pick up image sent from Grid page → auto switch to image-to-image (omni_reference) mode
     const pendingRef = localStorage.getItem('studio_pending_ref')
     if (pendingRef) {
       localStorage.removeItem('studio_pending_ref')
       setTab('image')
       setModel((defaults.defaultImageModel as string) || IMAGE_MODELS[0].value)
+      setImageRefMode('omni_reference')
       fetch(pendingRef).then(r => r.blob()).then(blob => {
-        const name = pendingRef.split('/').pop() || 'grid-ref.png'
-        const file = new File([blob], name, { type: blob.type || 'image/png' })
-        setRefs(p => [...p, file].slice(0, REF_LIMITS['nano-banana-2']?.max ?? 14))
+        const file = new File([blob], 'grid-ref.png', { type: 'image/png' })
+        setRefs([file])
       }).catch(() => {})
+      // Pre-fill prompt with selection range if provided
+      const pendingPrompt = localStorage.getItem('studio_pending_prompt')
+      if (pendingPrompt) {
+        localStorage.removeItem('studio_pending_prompt')
+        setPrompt(pendingPrompt)
+      }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -847,7 +969,7 @@ function StudioPageInner() {
       const m = (s.defaultImageModel as string) || IMAGE_MODELS[0].value
       setModel(m)
       const opts = getModelOptions(m, 'image')
-      setRes(opts.resolutions[1] ?? opts.resolutions[0])
+      setRes(opts.resolutions[0])
       setRatio(opts.ratios.find(r => r !== 'auto') || opts.ratios[0])
       setCount(1)
     } else {
@@ -867,7 +989,7 @@ function StudioPageInner() {
     const opts = getModelOptions(m, tab)
     const firstValidRatio = opts.ratios.find(r => r !== 'auto') || opts.ratios[0]
     if (!opts.ratios.includes(ratio) || (ratio === 'auto' && refs.length === 0)) setRatio(firstValidRatio)
-    if (!opts.resolutions.includes(resolution)) setRes(opts.resolutions[opts.resolutions.length - 1])
+    if (!opts.resolutions.includes(resolution)) setRes(opts.resolutions[0])
     if (opts.durations && !opts.durations.includes(duration)) setDur(opts.durations[1] ?? opts.durations[0])
     if (opts.qualities && !opts.qualities.includes(quality)) setQuality(opts.qualities[opts.qualities.length - 1])
   }
@@ -887,7 +1009,7 @@ function StudioPageInner() {
       toast(`Generation complete`, 'success')
       setNewTaskIds(prev => new Set([...prev, updated.task_id]))
     }
-    if (updated.status === 'failed') toast(`Generation failed`, 'error')
+    if (updated.status === 'failed') toast(t('studio.toast.generationFailed'), 'error')
   }, [toast])
 
   usePolling(activeIds, getTaskStatus, handleUpdate)
@@ -896,7 +1018,7 @@ function StudioPageInner() {
 
   // Demo mode: simulate queued → running → succeeded with a placeholder image
   async function handleDemoGenerate() {
-    if (!prompt.trim()) return setError('Please describe what you want to create')
+    if (!prompt.trim()) return setError(t('studio.error.emptyPrompt'))
     setError('')
 
     const cameraText = ''
@@ -936,7 +1058,7 @@ function StudioPageInner() {
     galleryRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     setPrompt(''); setRefs([])
     if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
-    toast(`Demo: ${count} task${count > 1 ? 's' : ''} submitted`, 'success')
+    toast(t('studio.toast.taskSubmitted'), 'success')
 
     // queued → running after 800ms
     await new Promise(r => setTimeout(r, 800))
@@ -959,7 +1081,7 @@ function StudioPageInner() {
   // #2: batch generation — submit `count` tasks
   async function handleGenerate() {
     if (demoMode) return handleDemoGenerate()
-    if (!prompt.trim()) return setError('Please describe what you want to create')
+    if (!prompt.trim()) return setError(t('studio.error.emptyPrompt'))
     setError(''); setLoading(true)
     const content: unknown[] = [{ type: 'text', text: prompt }]
     refs.forEach(f => content.push({ type: 'image_url', image_url: { url: `upload://${f.name}` } }))
@@ -967,7 +1089,6 @@ function StudioPageInner() {
     const payload = {
       model, content, resolution, ratio, duration, generate_audio: audio,
       ...(tab === 'image' && quality ? { quality } : {}),
-      ...(model === 'gpt-image-2' && thinking !== 'off' ? { thinking } : {}),
       ...(model === 'gpt-image-2' ? { background } : {}),
       ...(model.includes('seedance') ? { mode: seedanceMode } : {}),
     }
@@ -990,7 +1111,7 @@ function StudioPageInner() {
       galleryRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
       setPrompt(''); setRefs([])
       if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
-      toast(count > 1 ? `${count} tasks submitted` : 'Task submitted', 'success')
+      toast(count > 1 ? `${count} ${t('studio.toast.tasksSubmitted')}` : t('studio.toast.taskSubmitted'), 'success')
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } }; message?: string }
       setError(e.response?.data?.message || e.message || 'Error')
@@ -1030,7 +1151,7 @@ function StudioPageInner() {
       saveTask(newTask)
       setOutputs(prev => [newTask, ...prev])
       galleryRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-      toast('Edit task submitted', 'success')
+      toast(t('studio.toast.editTaskSubmitted'), 'success')
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } }; message?: string }
       setError(e.response?.data?.message || e.message || 'Error')
@@ -1084,6 +1205,16 @@ function StudioPageInner() {
       })
     }
   }
+
+  // Sync current Studio context to localStorage so Guide can restore matching tab/mode
+  useEffect(() => {
+    try {
+      const ctx = tab === 'image'
+        ? { tab: 'image', mode: imageRefMode === 'omni_reference' ? 'omni_reference' : 'normal' }
+        : { tab: 'video', mode: seedanceMode }
+      localStorage.setItem('studio_nav_context', JSON.stringify(ctx))
+    } catch { /* silent */ }
+  }, [tab, seedanceMode, imageRefMode])
 
   // Reset visible count when filter/sort/workspace changes
   useEffect(() => { setVisibleCount(PAGE_SIZE) }, [mediaFilter, activeSortOrder, workspace])
@@ -1153,7 +1284,7 @@ function StudioPageInner() {
                     width="13"
                     height="13"
                   />
-                  {w === 'personal' ? 'Personal' : 'Group'}
+                  {w === 'personal' ? t('studio.filter.personal') : t('studio.filter.group')}
                 </button>
               ))}
             </div>
@@ -1182,7 +1313,7 @@ function StudioPageInner() {
                   {f === 'favorites' && <span className="text-[11px] leading-none">♥</span>}
                   {/* label: always on desktop, only when active on mobile */}
                   <span className={`sm:inline ${isActive ? 'inline' : 'hidden'}`}>
-                    {f === 'all' ? 'All' : f === 'image' ? 'Images' : f === 'video' ? 'Videos' : 'Favorites'}
+                    {f === 'all' ? t('studio.filter.all') : f === 'image' ? t('studio.filter.images') : f === 'video' ? t('studio.filter.videos') : t('studio.filter.favorites')}
                   </span>
                 </button>
               )
@@ -1199,7 +1330,7 @@ function StudioPageInner() {
                     ${isActive ? 'bg-white/10 text-white' : 'bg-transparent text-[#555] hover:text-[#888]'}`}>
                   <span>{s === 'newest' ? '↓' : '↑'}</span>
                   <span className={`sm:inline ${isActive ? 'inline' : 'hidden'}`}>
-                    {s === 'newest' ? 'Newest' : 'Oldest'}
+                    {s === 'newest' ? t('studio.sort.newest') : t('studio.sort.oldest')}
                   </span>
                 </button>
               )
@@ -1212,7 +1343,7 @@ function StudioPageInner() {
           {sortedOutputs.length === 0 ? (
             <div className="h-64 flex flex-col items-center justify-center gap-3 text-[#2a2a35]">
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <span className="text-[13px]">Your generations will appear here</span>
+              <span className="text-[13px]">{t('studio.noGenerations')}</span>
             </div>
           ) : (
             <MasonryGrid
@@ -1293,9 +1424,9 @@ function StudioPageInner() {
               {tab === 'video' && model.includes('seedance') && (
                 <div className="flex gap-1 -mx-1 mb-0.5">
                   {([
-                    { id: 'text_to_video',     icon: '✦', label: 'Text to Video', hint: 'Prompt only'          },
-                    { id: 'first_last_frames',  icon: '↔', label: 'First / Last',  hint: 'Control start & end' },
-                    { id: 'omni_reference',     icon: '@', label: 'Omni Ref',      hint: 'Mix image/video/audio'},
+                    { id: 'text_to_video',     icon: '✦', label: t('studio.mode.textToVideo'), hint: t('studio.mode.hintPromptOnly') },
+                    { id: 'first_last_frames',  icon: '↔', label: t('studio.mode.firstLast'),  hint: t('studio.mode.hintFirstLast') },
+                    { id: 'omni_reference',     icon: '@', label: t('studio.mode.omniRef'),     hint: t('studio.mode.hintOmniRef') },
                   ] as const).map(m => (
                     <button key={m.id}
                       onClick={() => { setSeedanceMode(m.id); if (m.id === 'text_to_video') setRefs([]) }}
@@ -1318,8 +1449,8 @@ function StudioPageInner() {
               {tab === 'image' && (
                 <div className="flex gap-1 -mx-1 mb-0.5">
                   {([
-                    { id: 'normal' as const,        icon: '✦', label: 'Text to Image', hint: 'Prompt only'              },
-                    { id: 'omni_reference' as const, icon: '@', label: 'Image to Image', hint: 'Reference images in prompt' },
+                    { id: 'normal' as const,        icon: '✦', label: t('studio.mode.textToImage'), hint: t('studio.mode.hintPromptOnly') },
+                    { id: 'omni_reference' as const, icon: '@', label: t('studio.mode.imageToImage'), hint: t('studio.mode.hintImageToImage') },
                   ]).map(m => (
                     <button key={m.id}
                       onClick={() => { setImageRefMode(m.id); if (m.id === 'normal') setRefs([]) }}
@@ -1345,7 +1476,7 @@ function StudioPageInner() {
                   {tab === 'video' && model.includes('seedance') && seedanceMode === 'first_last_frames' ? (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-[#555] font-semibold uppercase tracking-widest w-10 flex-shrink-0">First</span>
+                        <span className="text-[10px] text-[#555] font-semibold uppercase tracking-widest w-10 flex-shrink-0">{t('studio.pagination.first')}</span>
                         {firstFrame ? (
                           <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 group border border-white/10">
                             <img src={URL.createObjectURL(firstFrame)} alt="" className="w-full h-full object-cover" />
@@ -1358,7 +1489,7 @@ function StudioPageInner() {
                       </div>
                       <div className="hidden sm:block w-px h-6 bg-white/[0.07]" />
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-[#555] font-semibold uppercase tracking-widest w-10 flex-shrink-0">Last</span>
+                        <span className="text-[10px] text-[#555] font-semibold uppercase tracking-widest w-10 flex-shrink-0">{t('studio.pagination.last')}</span>
                         {lastFrame ? (
                           <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 group border border-white/10">
                             <img src={URL.createObjectURL(lastFrame)} alt="" className="w-full h-full object-cover" />
@@ -1457,9 +1588,9 @@ function StudioPageInner() {
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate() } }}
                 placeholder={
                   tab === 'image' && imageRefMode === 'omni_reference' ? 'Use @image1, @image2 to reference uploaded images…' :
-                  tab === 'image' ? 'Describe what you want to create...' :
+                  tab === 'image' ? t('studio.placeholder.image') :
                   model.includes('seedance') && seedanceMode === 'omni_reference' ? 'Use @image1, @video1, @audio1 to reference uploaded files…' :
-                  'Describe the video you want to create...'
+                  t('studio.placeholder.video')
                 }
                 rows={2}
                 className="w-full resize-none bg-transparent border-none outline-none text-[14px] text-white placeholder:text-[#3a3a4a] leading-relaxed shadow-none p-0 min-w-0"
@@ -1509,7 +1640,7 @@ function StudioPageInner() {
             {/* Ratio */}
             <Popover trigger={<Pill icon={<IconRatio />} label={ratio} />}>
               <div className="w-44">
-                <div className="px-3 pt-2.5 pb-1.5 text-[11px] font-semibold text-[#555] uppercase tracking-widest">Aspect ratio</div>
+                <div className="px-3 pt-2.5 pb-1.5 text-[11px] font-semibold text-[#555] uppercase tracking-widest">{t('studio.filter.aspectRatio')}</div>
                 {modelOpts.ratios
                   .filter(r => r !== 'auto' || refs.length > 0 || seedanceMode === 'first_last_frames')
                   .map(r => {
@@ -1540,11 +1671,11 @@ function StudioPageInner() {
             {/* Quality — image only, if model supports it */}
             {tab === 'image' && modelOpts.qualities && (() => {
               const QUALITY_META: Record<string, string> = {
-                low:    'Fastest & cheapest',
-                medium: 'Balanced visuals',
-                high:   'Best visual fidelity',
-                auto:   'Model decides',
-                standard: 'Balanced visuals',
+                low:    t('studio.quality.fastest'),
+                medium: t('studio.quality.balanced'),
+                high:   t('studio.quality.best'),
+                auto:   t('studio.quality.auto'),
+                standard: t('studio.quality.balanced'),
               }
               return (
                 <Popover trigger={<Pill icon={<IconQuality />} label={quality} />}>
@@ -1566,22 +1697,13 @@ function StudioPageInner() {
               )
             })()}
 
-            {/* Thinking — Nano Banana 2 only (minimal/high; always on, controls level) */}
-            {model === 'nano-banana-2' && (
-              <Popover trigger={<Pill icon={<IconThinking />} label={`Think: ${thinking}`} />}>
-                <div className="flex flex-col gap-0.5 w-32">
-                  {THINKING.map(t => <Opt key={t} label={t} active={thinking === t} onClick={() => setThinking(t)} />)}
-                </div>
-              </Popover>
-            )}
-
             {/* Background — GPT Image 2 only */}
             {model === 'gpt-image-2' && (
               <Popover trigger={<Pill icon={<IconBackground />} label={background} />}>
                 <div className="w-44">
                   <div className="px-3 pt-2.5 pb-1.5 text-[11px] font-semibold text-[#555] uppercase tracking-widest">Background</div>
                   {([
-                    { value: 'auto',        hint: 'Model decides'       },
+                    { value: 'auto',        hint: t('studio.quality.auto') },
                     { value: 'transparent', hint: 'PNG with alpha channel' },
                     { value: 'opaque',      hint: 'Solid background'    },
                   ] as const).map(({ value, hint }) => (
@@ -1600,7 +1722,7 @@ function StudioPageInner() {
             )}
 
             {/* Resolution */}
-            <Popover trigger={<Pill label={resolution} />}>
+            <Popover trigger={<Pill label={modelOpts.resolutions.includes(resolution) ? resolution : modelOpts.resolutions[0]} />}>
               <div className="w-44">
                 <div className="px-3 pt-2.5 pb-1.5 text-[11px] font-semibold text-[#555] uppercase tracking-widest">Select resolution</div>
                 {modelOpts.resolutions.map(r => {
@@ -1706,14 +1828,14 @@ function StudioPageInner() {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
           isPersonal={!isGroup}
-          onAddToGroup={(t) => {
+          onAddToGroup={(addedTask) => {
             // avoid duplicates
             setGroupExtra(prev =>
-              prev.find(x => x.task_id === t.task_id)
+              prev.find(x => x.task_id === addedTask.task_id)
                 ? prev
-                : [...prev, { ...t, task_id: `group-added-${t.task_id}` }]
+                : [...prev, { ...addedTask, task_id: `group-added-${addedTask.task_id}` }]
             )
-            toast('Added to Group', 'success')
+            toast(t('studio.toast.addedToGroup'), 'success')
           }}
           onUseAsRef={(url) => {
             fetch(url).then(r => r.blob()).then(blob => {
@@ -1721,25 +1843,25 @@ function StudioPageInner() {
               const isVideoFile = name.endsWith('.mp4') || name.endsWith('.webm') || name.endsWith('.mov')
               const file = new File([blob], name, { type: blob.type || (isVideoFile ? 'video/mp4' : 'image/png') })
 
-              // In first_last_frames mode: fill firstFrame first, then lastFrame (images only)
-              if (tab === 'video' && model.includes('seedance') && seedanceMode === 'first_last_frames' && !isVideoFile) {
-                if (!firstFrame) {
-                  setFirstFrame(file)
-                } else if (!lastFrame) {
-                  setLastFrame(file)
-                }
-              } else if (tab === 'video' && model.includes('seedance') && seedanceMode === 'omni_reference') {
-                // omni_reference: add image or video to refs
-                const maxRefs = REF_LIMITS[model]?.max ?? 12
-                setRefs(p => [...p, file].slice(0, maxRefs))
-              } else if (!isVideoFile) {
-                // Default: add image to refs list
-                const maxRefs = REF_LIMITS[model]?.max ?? 9
-                setRefs(p => [...p, file].slice(0, maxRefs))
+              if (!isVideoFile) {
+                // Image ref → always switch to image tab + omni_reference (image-to-image)
+                setTab('image')
+                const s = typeof window !== 'undefined' ? loadSettings() : {}
+                const m = (s.defaultImageModel as string) || IMAGE_MODELS[0].value
+                setModel(m)
+                const opts = getModelOptions(m, 'image')
+                setRes(opts.resolutions[0])
+                setRatio(opts.ratios.find(r => r !== 'auto') || opts.ratios[0])
+                setImageRefMode('omni_reference')
+                setRefs([file])
               } else {
-                // Video in non-omni mode: switch to omni_reference and add
+                // Video ref → switch to video tab + omni_reference
+                setTab('video')
+                const s = typeof window !== 'undefined' ? loadSettings() : {}
+                const m = (s.defaultVideoModel as string) || VIDEO_MODELS[0].value
+                setModel(m)
                 setSeedanceMode('omni_reference')
-                const maxRefs = REF_LIMITS[model]?.max ?? 12
+                const maxRefs = REF_LIMITS[m]?.max ?? 12
                 setRefs(p => [...p, file].slice(0, maxRefs))
               }
             })
@@ -1749,20 +1871,10 @@ function StudioPageInner() {
             setTimeout(() => {
               if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto'
-                textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 144) + 'px'
+                textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px'
               }
-            }, 50)
+            }, 0)
           }}
-          onEditRegion={(t) => setEditingTask(t)}
-        />
-      )}
-
-      {/* Mask Editor — full screen inpainting */}
-      {editingTask?.video_url && (
-        <MaskEditor
-          imageUrl={editingTask.video_url}
-          onConfirm={handleMaskConfirm}
-          onCancel={() => setEditingTask(null)}
         />
       )}
     </div>

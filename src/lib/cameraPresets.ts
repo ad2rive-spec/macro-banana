@@ -34,8 +34,20 @@ export const CAMERA_PRESETS: CameraPreset[] = [
   { id: 'canon-ae1',         label: 'Canon AE-1',          sub: '35MM SLR',    emoji: '📷' },
   { id: 'contax-t2',         label: 'Contax T2',           sub: 'COMPACT',     emoji: '📷' },
   // Digital Cinema
-  { id: 'arri-alexa',        label: 'ARRI Alexa 35',       sub: 'DIGITAL',     emoji: '🎬' },
-  { id: 'red-v-raptor',      label: 'RED V-RAPTOR',        sub: 'DIGITAL',     emoji: '🎬' },
+  { id: 'arri-alexa',        label: 'ARRI Alexa 35',             sub: 'CINEMA',      emoji: '🎬' },
+  { id: 'arri-mini-lf',      label: 'ARRI Mini LF',              sub: 'CINEMA',      emoji: '🎬' },
+  { id: 'red-v-raptor',      label: 'RED V-RAPTOR',              sub: 'CINEMA',      emoji: '🎬' },
+  { id: 'red-komodo-x',      label: 'RED Komodo-X',              sub: 'CINEMA',      emoji: '🎬' },
+  { id: 'sony-venice-2',     label: 'Sony Venice 2',             sub: 'CINEMA',      emoji: '🎬' },
+  // Professional Video
+  { id: 'sony-fx3',          label: 'Sony FX3',                  sub: 'PRO VIDEO',   emoji: '📹' },
+  { id: 'sony-fx9',          label: 'Sony FX9',                  sub: 'PRO VIDEO',   emoji: '📹' },
+  { id: 'canon-c300-iii',    label: 'Canon EOS C300 Mark III',   sub: 'PRO VIDEO',   emoji: '📹' },
+  { id: 'bmpcc-6k',          label: 'Blackmagic Pocket 6K',      sub: 'BMPCC',       emoji: '📹' },
+  { id: 'bm-ursa-12k',       label: 'Blackmagic URSA 12K',       sub: 'CINEMA',      emoji: '📹' },
+  // Action / Aerial
+  { id: 'gopro-hero13',      label: 'GoPro HERO 13',             sub: 'ACTION',      emoji: '🎥' },
+  { id: 'dji-ronin-4d',      label: 'DJI Ronin 4D',              sub: 'AERIAL/GBAL', emoji: '🎥' },
 ]
 
 export const LENS_PRESETS: LensPreset[] = [

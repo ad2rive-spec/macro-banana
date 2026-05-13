@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import type { LightDirectionId } from '../types'
+import { useT } from '@/lib/LanguageContext'
 
 // ── Direction card definitions ────────────────────────────────────────────────
 
 interface DirectionCard {
   id: LightDirectionId
-  label: string
-  description: string
   /** SVG diagram showing where the light source is, relative to a subject circle */
   diagram: React.ReactNode
 }
@@ -63,8 +62,6 @@ function LightDiagram({
 const DIRECTION_CARDS: DirectionCard[] = [
   {
     id: 'front',
-    label: 'Front',
-    description: 'Light source directly in front of the subject — flat, even illumination',
     diagram: (
       <LightDiagram
         rays={[{ x1: 24, y1: 2, x2: 24, y2: 13 }]}
@@ -74,8 +71,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: '45-front-left',
-    label: '45° Front-Left',
-    description: 'Classic 45° key light from the front-left — the most flattering portrait angle',
     diagram: (
       <LightDiagram
         rays={[{ x1: 6, y1: 6, x2: 16, y2: 16 }]}
@@ -85,8 +80,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: '45-front-right',
-    label: '45° Front-Right',
-    description: 'Classic 45° key light from the front-right',
     diagram: (
       <LightDiagram
         rays={[{ x1: 42, y1: 6, x2: 32, y2: 16 }]}
@@ -96,8 +89,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: 'side-left',
-    label: 'Side Left',
-    description: 'Hard side light from the left — dramatic split-lighting effect',
     diagram: (
       <LightDiagram
         rays={[{ x1: 2, y1: 24, x2: 13, y2: 24 }]}
@@ -107,8 +98,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: 'side-right',
-    label: 'Side Right',
-    description: 'Hard side light from the right',
     diagram: (
       <LightDiagram
         rays={[{ x1: 46, y1: 24, x2: 35, y2: 24 }]}
@@ -118,8 +107,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: 'back',
-    label: 'Backlit',
-    description: 'Light source behind the subject — creates silhouettes and rim glows',
     diagram: (
       <LightDiagram
         rays={[{ x1: 24, y1: 46, x2: 24, y2: 35 }]}
@@ -129,8 +116,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: 'rim',
-    label: 'Rim Light',
-    description: "Narrow rim of light along the subject's edge — adds depth and separation",
     diagram: (
       <LightDiagram
         rays={[
@@ -143,8 +128,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: 'top',
-    label: 'Top-Down',
-    description: 'Overhead light directly above — strong top shadows, dramatic look',
     diagram: (
       <LightDiagram
         rays={[
@@ -158,8 +141,6 @@ const DIRECTION_CARDS: DirectionCard[] = [
   },
   {
     id: 'bottom',
-    label: 'Under Light',
-    description: 'Light from below — eerie, theatrical uplighting effect',
     diagram: (
       <LightDiagram
         rays={[{ x1: 24, y1: 44, x2: 24, y2: 35 }]}
@@ -231,15 +212,13 @@ interface LightDirectionPickerProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function LightDirectionPicker({ value, onChange }: LightDirectionPickerProps) {
+  const t = useT()
   const [hoveredId, setHoveredId] = useState<LightDirectionId | null>(null)
 
   return (
     <div className="flex flex-col gap-3">
       {/* Label row */}
-      <p className="text-[12px] text-[var(--color-muted)] leading-snug">
-        Choose the direction of the key light source relative to the subject.
-        Click again to deselect.
-      </p>
+      {/* Light direction intro text omitted — cards are self-explanatory */}
 
       {/* Grid of preset cards */}
       <div
@@ -260,7 +239,7 @@ export function LightDirectionPicker({ value, onChange }: LightDirectionPickerPr
                 onFocus={() => setHoveredId(card.id)}
                 onBlur={() => setHoveredId(null)}
                 aria-pressed={isActive}
-                aria-label={`${card.label}: ${card.description}`}
+                aria-label={`${t(`lightDir.${card.id}.label`)}: ${t(`lightDir.${card.id}.description`)}`}
                 className={[
                   'flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-150 cursor-pointer w-full',
                   isActive
@@ -275,7 +254,7 @@ export function LightDirectionPicker({ value, onChange }: LightDirectionPickerPr
 
                 {/* Label */}
                 <span className="text-[10px] font-medium text-center leading-tight">
-                  {card.label}
+                  {t(`lightDir.${card.id}.label`)}
                 </span>
               </button>
 
@@ -291,7 +270,7 @@ export function LightDirectionPicker({ value, onChange }: LightDirectionPickerPr
                   style={{ minWidth: '140px', maxWidth: '180px', whiteSpace: 'normal' }}
                   role="tooltip"
                 >
-                  {card.description}
+                  {t(`lightDir.${card.id}.description`)}
                   <span
                     className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"
                     aria-hidden="true"

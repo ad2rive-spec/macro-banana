@@ -46,8 +46,10 @@ const styleIds: StyleId[] = [
   'street', 'architectural', 'macro', 'vintage',
 ]
 const movementIds: MovementId[] = [
-  'static', 'pan-left', 'pan-right', 'tilt-up', 'tilt-down',
-  'dolly-in', 'dolly-out', 'tracking', 'handheld', 'crane-up', 'crane-down', 'drone',
+  'static', 'handheld', 'zoom-out', 'zoom-in', 'cam-follows',
+  'pan-left', 'pan-right', 'tilt-up', 'tilt-down', 'orbit',
+  'dolly-in', 'dolly-out', 'jib-up', 'jib-down', 'drone',
+  'dolly-left', 'dolly-right',
 ]
 const apertureValues = [null, 'f/1.2', 'f/1.4', 'f/1.8', 'f/2', 'f/2.8', 'f/4', 'f/5.6', 'f/8', 'f/11']
 
@@ -93,6 +95,9 @@ const arbitraryGuideState = (): fc.Arbitrary<GuideState> =>
     useCase: fc.option(fc.constantFrom(...useCaseIds), { nil: null }),
     constraints: fc.array(fc.constantFrom(...constraintIds), { minLength: 0, maxLength: 4 }).map(arr => [...new Set(arr)]),
     movement: fc.option(arbitraryMovementId(), { nil: null }),
+    action: arbitrarySubject(),
+    setting: arbitrarySubject(),
+    videoStyle: fc.option(fc.constantFrom('action', 'documentary', 'commercial', 'music-video', 'short-film', 'news', 'vlog', 'comedy', 'horror'), { nil: null }),
   })
 
 /** Arbitrary for a GuideState where both camera.aperture is non-null and dof !== -1 */
@@ -381,8 +386,7 @@ describe('Property 8: Send to Studio is a pure read', () => {
         const containsTab = url.includes(`tab=${state.mediaTab}`)
 
         return containsPrompt && containsTab
-      }),
-      { numRuns: 100 }
+      })
     )
   })
 })

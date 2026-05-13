@@ -44,6 +44,36 @@ export const GridCanvas = forwardRef<HTMLDivElement, CanvasProps>(
       setIsDragging(false); setDragStart(null); setDragCurrent(null)
     }
 
+    // ── Touch cell selection (drag support) ──
+    function getCellIndexFromPoint(clientX: number, clientY: number): number | null {
+      const el = document.elementFromPoint(clientX, clientY) as HTMLElement | null
+      if (!el) return null
+      const cell = el.closest<HTMLElement>('[data-cell-index]')
+      if (!cell) return null
+      const idx = parseInt(cell.dataset.cellIndex ?? '', 10)
+      return isNaN(idx) ? null : idx
+    }
+    function cellTouchStart(i: number, e: React.TouchEvent) {
+      if (drawingState.tool !== 'select') return
+      e.stopPropagation()
+      e.preventDefault()
+      setIsDragging(false); setDragStart(i); setDragCurrent(i)
+    }
+    function cellTouchMove(e: React.TouchEvent) {
+      if (dragStart === null || drawingState.tool !== 'select') return
+      e.preventDefault()
+      const t = e.touches[0]
+      const idx = getCellIndexFromPoint(t.clientX, t.clientY)
+      if (idx !== null && idx !== dragCurrent) { setIsDragging(true); setDragCurrent(idx) }
+    }
+    function cellTouchEnd() {
+      if (dragStart !== null) {
+        if (isDragging && dragCurrent !== null) onSelectRange(dragStart, dragCurrent)
+        else onToggleCell(dragStart)
+      }
+      setIsDragging(false); setDragStart(null); setDragCurrent(null)
+    }
+
     // ── Drawing handlers ──
     function drawDown(e: React.MouseEvent | React.TouchEvent) {
       if (drawingState.tool === 'select') return
@@ -89,6 +119,35 @@ export const GridCanvas = forwardRef<HTMLDivElement, CanvasProps>(
       return sel
     }
     const dragSel = getDragSel()
+
+    // ── Selection bounding box overlay ──
+    function getSelectionRect(cells: Set<number>): { left: number; top: number; width: number; height: number } | null {
+      if (cells.size === 0) return null
+      const { columns, rows, colGap, rowGap, marginLeft, marginTop, marginRight, marginBottom, width, height } = config
+      const contentW = width  - marginLeft - marginRight
+      const contentH = height - marginTop  - marginBottom
+      const colW = (contentW - (columns - 1) * colGap) / columns
+      const rowH = (contentH - (rows    - 1) * rowGap) / rows
+      let minC = columns, maxC = -1, minR = rows, maxR = -1
+      cells.forEach(i => {
+        const c = i % columns, r = Math.floor(i / columns)
+        if (c < minC) minC = c; if (c > maxC) maxC = c
+        if (r < minR) minR = r; if (r > maxR) maxR = r
+      })
+      const cs = maxC - minC + 1, rs = maxR - minR + 1
+      return {
+        left:   marginLeft + minC * (colW + colGap),
+        top:    marginTop  + minR * (rowH + rowGap),
+        width:  cs * colW  + (cs - 1) * colGap,
+        height: rs * rowH  + (rs - 1) * rowGap,
+      }
+    }
+
+    // While dragging: show only the live drag rect (hide old selection to avoid confusion)
+    // When idle: show the committed selection rect
+    const selRect = isDragging
+      ? getSelectionRect(dragSel)
+      : getSelectionRect(selectedCells)
 
     // ── Render drawing element ──
     function renderEl(el: DrawingElement) {
@@ -140,7 +199,7 @@ export const GridCanvas = forwardRef<HTMLDivElement, CanvasProps>(
         )}
 
         {/* Grid */}
-        <div className="absolute inset-0 z-10"
+        <div className="absolute inset-0 z-10" data-capture-hide
           style={{ paddingTop: marginTop, paddingBottom: marginBottom, paddingLeft: marginLeft, paddingRight: marginRight }}>
           <div className="w-full h-full"
             style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)`, columnGap: colGap, rowGap }}
@@ -149,19 +208,28 @@ export const GridCanvas = forwardRef<HTMLDivElement, CanvasProps>(
             onMouseUp={drawingState.tool !== 'select' ? drawUp : cellUp}
             onMouseLeave={cellUp}
             onTouchStart={drawingState.tool !== 'select' ? drawDown : undefined}
-            onTouchMove={drawingState.tool !== 'select' ? drawMove : undefined}
-            onTouchEnd={drawingState.tool !== 'select' ? drawUp : cellUp}>
-            {Array.from({ length: columns * rows }).map((_, i) => {
-              const sel = selectedCells.has(i) || dragSel.has(i)
-              return (
-                <div key={i} data-cell-index={i}
-                  onMouseDown={drawingState.tool === 'select' ? e => cellDown(i, e) : undefined}
-                  onMouseEnter={drawingState.tool === 'select' ? () => cellEnter(i) : undefined}
-                  className={`w-full h-full border transition-all select-none touch-none ${drawingState.tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'} ${sel ? 'bg-yellow-400/50 border-yellow-500' : 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20'}`} />
-              )
-            })}
+            onTouchMove={drawingState.tool !== 'select' ? drawMove : cellTouchMove}
+            onTouchEnd={drawingState.tool !== 'select' ? drawUp : cellTouchEnd}>
+            {Array.from({ length: columns * rows }).map((_, i) => (
+              <div key={i} data-cell-index={i}
+                onMouseDown={drawingState.tool === 'select' ? e => cellDown(i, e) : undefined}
+                onMouseEnter={drawingState.tool === 'select' ? () => cellEnter(i) : undefined}
+                onTouchStart={drawingState.tool === 'select' ? e => cellTouchStart(i, e) : undefined}
+                className={`w-full h-full border transition-all select-none touch-none ${drawingState.tool === 'select' ? 'cursor-pointer' : 'pointer-events-none'} bg-red-500/10 border-red-500/20 hover:bg-red-500/20`} />
+            ))}
           </div>
         </div>
+
+        {/* Selection bounding box overlay */}
+        {selRect && (
+          <div className="absolute z-20 pointer-events-none" data-capture-hide style={{
+            left: selRect.left, top: selRect.top,
+            width: selRect.width, height: selRect.height,
+            background: 'rgba(239, 68, 68, 0.5)',
+            border: '2px solid rgba(239, 68, 68, 0.9)',
+            boxShadow: '0 0 0 1px rgba(239,68,68,0.3)',
+          }} />
+        )}
 
         {/* Drawing layer */}
         <div className="absolute inset-0 z-30 pointer-events-none">
@@ -170,7 +238,7 @@ export const GridCanvas = forwardRef<HTMLDivElement, CanvasProps>(
         </div>
 
         {/* Margin guides */}
-        <div className="absolute inset-0 pointer-events-none z-20">
+        <div className="absolute inset-0 pointer-events-none z-20" data-capture-hide>
           <div className="absolute top-0 bottom-0 border-r border-yellow-500/20 border-dashed" style={{ left: marginLeft }} />
           <div className="absolute top-0 bottom-0 border-l border-yellow-500/20 border-dashed" style={{ right: marginRight }} />
           <div className="absolute left-0 right-0 border-b border-yellow-500/20 border-dashed" style={{ top: marginTop }} />

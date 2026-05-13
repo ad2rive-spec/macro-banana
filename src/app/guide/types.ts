@@ -1,4 +1,4 @@
-// ── Guide Types ──
+// Guide Types
 // Central type definitions for the Visual Prompt Guide feature.
 
 import type { CameraSettings } from '@/lib/cameraPresets'
@@ -60,85 +60,194 @@ export type StyleId =
   | 'minimal'
 
 export type UseCaseId =
+  | 'portrait'
+  | 'fashion'
   | 'editorial-photo'
   | 'product-mockup'
-  | 'poster'
-  | 'ui-screen'
-  | 'concept-art'
   | 'social-media'
+  | 'poster'
+  | 'album-cover'
+  | 'concept-art'
+  | 'fantasy-scifi'
+  | 'anime-manga'
+  | 'architecture'
+  | 'food'
+  | 'ui-screen'
+  | 'wallpaper'
   | 'documentary'
 
 export type MovementId =
   | 'static'
+  | 'handheld'
+  | 'zoom-out'
+  | 'zoom-in'
+  | 'cam-follows'
   | 'pan-left'
   | 'pan-right'
   | 'tilt-up'
   | 'tilt-down'
+  | 'orbit'
   | 'dolly-in'
   | 'dolly-out'
-  | 'tracking'
-  | 'handheld'
-  | 'crane-up'
-  | 'crane-down'
+  | 'jib-up'
+  | 'jib-down'
   | 'drone'
+  | 'dolly-left'
+  | 'dolly-right'
+
+export type VideoStyleId =
+  | 'action'
+  | 'documentary'
+  | 'commercial'
+  | 'music-video'
+  | 'short-film'
+  | 'news'
+  | 'vlog'
+  | 'comedy'
+  | 'horror'
 
 export interface GuideState {
-  /** Media mode — image or video */
   mediaTab: 'image' | 'video'
-
-  /** Section 1: Subject free-text */
   subject: string
-
-  /** Section 2: Framing */
   shotSize: ShotSizeId | null
   camera: CameraSettings
-
-  /** Section 3: Angle */
   angle: AngleId | null
-
-  /** Section 4: Light (max 2, FIFO eviction) */
   lighting: LightingId[]
-
-  /** Section 4b: Light Direction (single-select, toggle) */
   lightDirection: LightDirectionId | null
-
-  /** Section 5: Style (single-select, toggle) */
   style: StyleId | null
-
-  /** Section 6: Depth of Field — -1 = unset, 0–8 = aperture index */
   dof: number
-
-  /** Section 7: Use Case (single-select, toggle) */
   useCase: UseCaseId | null
-
-  /** Section 9: Constraints (multi-select) */
   constraints: string[]
-
-  /** Section 10: Movement (video only) */
   movement: MovementId | null
+  action: string
+  setting: string
+  videoStyle: VideoStyleId | null
 }
 
-/** Derived prompt segments — computed by assemblePrompt(), never stored */
 export interface PromptSegments {
-  subject:     string | null
-  shotSize:    string | null
-  camera:      string | null
-  angle:       string | null
-  lighting:        string | null
-  lightDirection:  string | null
-  style:       string | null
-  dof:         string | null
-  useCase:     string | null
-  constraints: string | null
-  movement:    string | null
-  /** All non-null segments joined with ', ' */
-  full:        string
+  subject:        string | null
+  shotSize:       string | null
+  camera:         string | null
+  angle:          string | null
+  lighting:       string | null
+  lightDirection: string | null
+  style:          string | null
+  dof:            string | null
+  useCase:        string | null
+  constraints:    string | null
+  movement:       string | null
+  action:         string | null
+  setting:        string | null
+  videoStyle:     string | null
+  full:           string
 }
 
-/** Metadata for each guide section, used by GuideSidebar */
 export interface SectionMeta {
   id: string
   label: string
   hasSelection: (state: GuideState) => boolean
   videoOnly?: boolean
+}
+
+// ── Video Shot Planner types ──────────────────────────────────────────────────
+
+export type SpeedRamp =
+  | 'linear'
+  | 'slow-mo'
+  | 'ramp-up'
+  | 'ramp-down'
+  | 'ease-in-out'
+
+export type ShotMode =
+  | 'text_to_video'
+  | 'first_last_frames'
+  | 'omni_reference'
+
+/** A single uploaded asset in the global pool */
+export interface PlanAsset {
+  /** Unique id, e.g. "a1", "v1" */
+  tag: string
+  /** 'image' or 'video' */
+  kind: 'image' | 'video'
+  /** The File object – not serialised to localStorage */
+  file?: File
+  /** Object URL for preview */
+  previewUrl: string
+  /** Original filename */
+  name: string
+}
+
+/** One shot in the plan */
+export interface ShotState {
+  id: string
+  /** 1–15, integer seconds, all shots must sum <= 15 */
+  duration: number
+  mode: ShotMode
+  movement: MovementId | null
+  speedRamp: SpeedRamp
+  /** Framing / shot size (text_to_video & omni only) */
+  shotSize: ShotSizeId | null
+  /** Camera angle (text_to_video & omni only) */
+  angle: AngleId | null
+  /** Lighting presets (text_to_video & omni only, max 2) */
+  lighting: LightingId[]
+  /** Camera body / lens / focal length / aperture (text_to_video & omni only) */
+  camera: CameraSettings
+  /** Depth of field slider value -1 (unset) to 8 (text_to_video & omni only) */
+  dof: number
+  /** Free-text prompt, may contain @image1 etc. */
+  prompt: string
+  /** Asset tags referenced in this shot (subset of global pool) */
+  assetRefs: string[]
+}
+
+// ── Output settings ───────────────────────────────────────────────────────────
+
+/** Studio output settings for image generation */
+export interface ImageOutputSettings {
+  model: string
+  ratio: string
+  resolution: string
+  quality: string
+}
+
+/** Studio output settings for video generation */
+export interface VideoOutputSettings {
+  model: string
+  ratio: string
+  resolution: string
+}
+
+/** A reference image for image guide */
+export interface ImageRef {
+  tag: string
+  kind: 'image'
+  file?: File
+  previewUrl: string
+  name: string
+}
+
+/** Shared visual settings used by both Overall Setting and per-shot overrides */
+export interface VisualSetting {
+  shotSize: ShotSizeId | null
+  angle: AngleId | null
+  lighting: LightingId[]
+  camera: CameraSettings
+  dof: number
+}
+
+/** Top-level video plan (replaces GuideState for video mode) */
+export interface VideoPlanState {
+  /** Global generation mode — set once at the top level */
+  planMode: ShotMode
+  /** Global asset pool (used by omni_reference and first_last_frames) */
+  assets: PlanAsset[]
+  /** Overall video style */
+  overallStyle: VideoStyleId | null
+  /** Overall visual setting applied to all shots (can be overridden per shot) */
+  overallSetting: VisualSetting
+  /** All shots (multi for text_to_video / omni; always 1 for first_last_frames) */
+  shots: ShotState[]
+  /** Studio output settings */
+  outputSettings: VideoOutputSettings
 }

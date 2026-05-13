@@ -1,16 +1,12 @@
-﻿'use client'
+'use client'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { loadSettings, saveSettings } from '@/services/api'
+import { useLanguage, useT } from '@/lib/LanguageContext'
+import { LANGUAGES } from '@/lib/i18n'
 
-const NAV = [
-  { href: '/studio', label: 'Studio', icon: 'lucide:wand-sparkles' },
-  { href: '/guide',  label: 'Guide',  icon: 'lucide:compass' },
-  { href: '/grid',   label: 'Grid',   icon: 'lucide:grid-3x3' },
-]
-
-// Mock user ??replace with real auth later
+// Mock user — replace with real auth later
 const MOCK_USER = { name: 'Wayne Lin', email: 'wayne@macrobanana.ai', groups: 2 }
 
 const RESOLUTIONS = ['480p', '720p', '1080p', '2K']
@@ -23,15 +19,15 @@ const IMAGE_MODELS = [
 const VIDEO_MODELS = [
   { value: 'doubao-seedance-2-0-260128',      label: 'Seedance 2.0' },
   { value: 'doubao-seedance-2-0-fast-260128', label: 'Seedance 2.0 Fast' },
-  { value: 'veo-3-1-fast',                    label: 'Veo 3.1 Fast' },
 ]
 
 function UserPopover() {
+  const t = useT()
+  const { lang, setLang } = useLanguage()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const initial = MOCK_USER.name.charAt(0).toUpperCase()
 
-  // Settings state
   const [s, setS] = useState(() => ({
     apiBaseUrl: 'http://localhost:3001',
     webhookUrl: '',
@@ -53,7 +49,6 @@ function UserPopover() {
     setTimeout(() => setSaved(false), 2000)
   }
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return
     const h = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
@@ -61,7 +56,6 @@ function UserPopover() {
     return () => document.removeEventListener('mousedown', h)
   }, [open])
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
@@ -77,7 +71,6 @@ function UserPopover() {
 
   return (
     <div ref={ref} className="relative">
-      {/* Avatar button */}
       <button
         onClick={() => setOpen(o => !o)}
         className="w-8 h-8 rounded-full bg-[var(--color-purple)] flex items-center justify-center text-[#1a1a1a] text-[13px] font-bold border-none cursor-pointer hover:opacity-90 transition-opacity select-none"
@@ -86,11 +79,9 @@ function UserPopover() {
         {initial}
       </button>
 
-      {/* Popover */}
       {open && (
         <div className="absolute top-[calc(100%+8px)] right-0 z-[9999] w-[320px] bg-[#17171e] border border-white/[0.09] rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.7)] overflow-hidden">
 
-          {/* User info */}
           <div className="px-4 py-3.5 border-b border-white/[0.07] flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[var(--color-purple)] flex items-center justify-center text-[#1a1a1a] text-[15px] font-bold flex-shrink-0">
               {initial}
@@ -99,29 +90,39 @@ function UserPopover() {
               <div className="text-[13px] font-semibold text-white truncate">{MOCK_USER.name}</div>
               <div className="text-[11px] text-[#555] truncate">{MOCK_USER.email}</div>
             </div>
-            {/* Groups badge */}
             <div className="ml-auto flex-shrink-0 flex items-center gap-1 bg-white/[0.06] rounded-full px-2 py-1">
               <iconify-icon icon="lucide:users" width="11" height="11" style={{ color: '#FFD700' }} />
               <span className="text-[11px] text-[#FFD700] font-semibold">{MOCK_USER.groups}</span>
             </div>
           </div>
 
-          {/* Settings content */}
           <div className="overflow-y-auto max-h-[70vh]">
 
-            {/* API Config */}
             <div className="px-4 pt-3 pb-1">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#444] mb-2.5">API Configuration</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#444] mb-2.5">{t('settings.language')}</div>
+              <div className="flex gap-1.5">
+                {LANGUAGES.map(l => (
+                  <button key={l.id} onClick={() => setLang(l.id)} className={chipCls(lang === l.id)}>
+                    {l.nativeLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-4 my-3 border-t border-white/[0.06]" />
+
+            <div className="px-4 pb-1">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#444] mb-2.5">{t('settings.apiConfig')}</div>
               <div className="flex flex-col gap-2.5">
                 <div>
-                  <label className="text-[11px] text-[#555] block mb-1">Backend URL</label>
+                  <label className="text-[11px] text-[#555] block mb-1">{t('settings.backendUrl')}</label>
                   <input type="url" value={s.apiBaseUrl}
                     onChange={e => upd('apiBaseUrl', e.target.value)}
                     placeholder="http://localhost:3001"
                     className="w-full bg-[#0d0d12] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[12px] text-white outline-none focus:border-[#FFD700] transition-colors placeholder:text-[#333]" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#555] block mb-1">Webhook URL <span className="text-[#333]">(optional)</span></label>
+                  <label className="text-[11px] text-[#555] block mb-1">{t('settings.webhookUrl')} <span className="text-[#333]">({t('settings.webhookOptional')})</span></label>
                   <input type="url" value={s.webhookUrl}
                     onChange={e => upd('webhookUrl', e.target.value)}
                     placeholder="https://your-server.com/webhook"
@@ -132,12 +133,11 @@ function UserPopover() {
 
             <div className="mx-4 my-3 border-t border-white/[0.06]" />
 
-            {/* Defaults */}
             <div className="px-4 pb-1">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#444] mb-2.5">Default Parameters</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#444] mb-2.5">{t('settings.defaultParams')}</div>
               <div className="flex flex-col gap-3">
                 <div>
-                  <label className="text-[11px] text-[#555] block mb-1.5">Image Model</label>
+                  <label className="text-[11px] text-[#555] block mb-1.5">{t('settings.imageModel')}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {IMAGE_MODELS.map(m => (
                       <button key={m.value} onClick={() => upd('defaultImageModel', m.value)} className={chipCls(s.defaultImageModel === m.value)}>{m.label}</button>
@@ -145,7 +145,7 @@ function UserPopover() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#555] block mb-1.5">Video Model</label>
+                  <label className="text-[11px] text-[#555] block mb-1.5">{t('settings.videoModel')}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {VIDEO_MODELS.map(m => (
                       <button key={m.value} onClick={() => upd('defaultVideoModel', m.value)} className={chipCls(s.defaultVideoModel === m.value)}>{m.label}</button>
@@ -153,7 +153,7 @@ function UserPopover() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#555] block mb-1.5">Resolution</label>
+                  <label className="text-[11px] text-[#555] block mb-1.5">{t('settings.resolution')}</label>
                   <div className="flex gap-1.5">
                     {RESOLUTIONS.map(r => (
                       <button key={r} onClick={() => upd('defaultResolution', r)} className={chipCls(s.defaultResolution === r)}>{r}</button>
@@ -161,7 +161,7 @@ function UserPopover() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#555] block mb-1.5">Ratio</label>
+                  <label className="text-[11px] text-[#555] block mb-1.5">{t('settings.ratio')}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {RATIOS.map(r => (
                       <button key={r} onClick={() => upd('defaultRatio', r)} className={chipCls(s.defaultRatio === r)}>{r}</button>
@@ -170,7 +170,7 @@ function UserPopover() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] text-[#555]">Duration</label>
+                    <label className="text-[11px] text-[#555]">{t('settings.duration')}</label>
                     <span className="text-[11px] text-[#FFD700] font-semibold">{s.defaultDuration}s</span>
                   </div>
                   <input type="range" min={4} max={15} value={s.defaultDuration}
@@ -181,15 +181,14 @@ function UserPopover() {
               </div>
             </div>
 
-            {/* Save + Sign out */}
             <div className="px-4 py-3 border-t border-white/[0.07] mt-3 flex gap-2">
               <button onClick={handleSave}
                 className="flex-1 py-2 rounded-xl bg-[#FFD700] hover:bg-[#CC9900] text-[#1a1a1a] text-[12px] font-bold border-none cursor-pointer transition-colors">
-                {saved ? '??Saved' : 'Save Settings'}
+                {saved ? t('settings.saved') : t('settings.save')}
               </button>
               <button
                 className="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] text-[#555] hover:text-[#888] text-[12px] border-none cursor-pointer transition-colors"
-                title="Sign out (coming soon)"
+                title={t('settings.signOut') + ' (coming soon)'}
                 disabled>
                 <iconify-icon icon="lucide:log-out" width="13" height="13" />
               </button>
@@ -203,7 +202,14 @@ function UserPopover() {
 
 export function Navbar() {
   const pathname = usePathname()
+  const t = useT()
   const [online, setOnline] = useState<boolean | null>(null)
+
+  const NAV = [
+    { href: '/studio', labelKey: 'nav.studio', icon: 'lucide:wand-sparkles' },
+    { href: '/guide',  labelKey: 'nav.guide',  icon: 'lucide:compass' },
+    { href: '/grid',   labelKey: 'nav.grid',   icon: 'lucide:grid-3x3' },
+  ]
 
   useEffect(() => {
     let cancelled = false
@@ -232,32 +238,29 @@ export function Navbar() {
       </div>
 
       <nav className="flex gap-0.5">
-        {NAV.map(({ href, label, icon }) => {
+        {NAV.map(({ href, labelKey, icon }) => {
           const active = pathname === href || (href === '/studio' && pathname === '/')
           return (
             <Link key={href} href={href}
-              aria-label={label}
+              aria-label={t(labelKey)}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 no-underline
                 ${active
                   ? 'bg-[var(--color-raised)] text-[var(--color-text)]'
                   : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'}`}>
               <iconify-icon icon={icon} width="14" height="14" />
-              <span className="hidden sm:inline">{label}</span>
+              <span className="hidden sm:inline">{t(labelKey)}</span>
             </Link>
           )
         })}
       </nav>
 
       <div className="ml-auto flex items-center gap-3">
-        {/* API status */}
         <div className="flex items-center gap-1.5">
           <div className={`w-1.5 h-1.5 rounded-full transition-colors ${dotColor}`} />
           <span className="text-[11px] text-[var(--color-faint)]">
-            {online === false ? 'Offline' : 'API'}
+            {online === false ? t('nav.offline') : 'API'}
           </span>
         </div>
-
-        {/* User avatar */}
         <UserPopover />
       </div>
     </header>

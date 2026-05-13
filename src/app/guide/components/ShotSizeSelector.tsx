@@ -2,27 +2,26 @@
 
 import { useCallback, useRef } from 'react'
 import type { ShotSizeId } from '../types'
+import { useT } from '@/lib/LanguageContext'
 
 // ── Shot size definitions ─────────────────────────────────────────────────────
 
 interface ShotSizeDef {
   id: ShotSizeId
   abbrev: string
-  fullName: string
   /** Y position as a fraction of the 480px viewBox height */
   yFraction: number
-  description: string
 }
 
 const SHOT_SIZES: ShotSizeDef[] = [
-  { id: 'ecu', abbrev: 'ECU', fullName: 'Extreme Close-Up',  yFraction: 0.12, description: 'Fills frame with a single facial feature or object detail' },
-  { id: 'cu',  abbrev: 'CU',  fullName: 'Close-Up',          yFraction: 0.25, description: 'Head and top of shoulders' },
-  { id: 'mcu', abbrev: 'MCU', fullName: 'Medium Close-Up',   yFraction: 0.38, description: 'Chest and above' },
-  { id: 'ms',  abbrev: 'MS',  fullName: 'Medium Shot',       yFraction: 0.52, description: 'Waist and above' },
-  { id: 'mfs', abbrev: 'MFS', fullName: 'Medium Full Shot',  yFraction: 0.68, description: 'Knees and above' },
-  { id: 'fs',  abbrev: 'FS',  fullName: 'Full Shot',         yFraction: 0.82, description: 'Full body with minimal headroom' },
-  { id: 'ws',  abbrev: 'WS',  fullName: 'Wide Shot',         yFraction: 0.92, description: 'Full body with environmental context' },
-  { id: 'els', abbrev: 'ELS', fullName: 'Extreme Long Shot', yFraction: 1.00, description: 'Subject tiny in a vast environment' },
+  { id: 'ecu', abbrev: 'ECU', yFraction: 0.12 },
+  { id: 'cu',  abbrev: 'CU',  yFraction: 0.25 },
+  { id: 'mcu', abbrev: 'MCU', yFraction: 0.38 },
+  { id: 'ms',  abbrev: 'MS',  yFraction: 0.52 },
+  { id: 'mfs', abbrev: 'MFS', yFraction: 0.68 },
+  { id: 'fs',  abbrev: 'FS',  yFraction: 0.82 },
+  { id: 'ws',  abbrev: 'WS',  yFraction: 0.92 },
+  { id: 'els', abbrev: 'ELS', yFraction: 1.00 },
 ]
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -40,6 +39,7 @@ interface ShotSizeSelectorProps {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
+  const t = useT()
   const containerRef = useRef<SVGSVGElement>(null)
 
   const selectedIndex = value ? SHOT_SIZES.findIndex(s => s.id === value) : -1
@@ -192,9 +192,9 @@ export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
 
               {/* Right full-name label — pill background for legibility */}
               <rect
-                x={VIEW_W - 4 - def.fullName.length * 5.2}
+                x={VIEW_W - 70}
                 y={y - 14}
-                width={def.fullName.length * 5.2 + 6}
+                width={66}
                 height={13}
                 rx={3}
                 fill={isActive ? 'rgba(255,215,0,0.85)' : 'rgba(0,0,0,0.55)'}
@@ -209,7 +209,7 @@ export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
                 textAnchor="end"
                 fill="white"
               >
-                {def.fullName}
+                {t(`shotSize.${def.id}.fullName`)}
               </text>
             </g>
           )
@@ -218,7 +218,7 @@ export function ShotSizeSelector({ value, onChange }: ShotSizeSelectorProps) {
 
       {/* ── Description ── */}
       <p className="text-[13px] text-[var(--color-muted)] mt-3 min-h-[2.5rem]">
-        {selectedDef ? selectedDef.description : ''}
+        {selectedDef ? t(`shotSize.${selectedDef.id}.description`) : ''}
       </p>
     </div>
   )

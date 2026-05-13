@@ -1,4 +1,4 @@
-// ── Guide Logic ──
+// Guide Logic
 // Pure helper functions for the Visual Prompt Guide.
 // None of these functions mutate their inputs.
 
@@ -13,11 +13,12 @@ import type {
   StyleId,
   UseCaseId,
   MovementId,
+  VideoStyleId,
 } from './types'
 
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 // Lookup maps (exported for property tests)
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 
 export const SHOT_SIZE_TERMS: Record<ShotSizeId, string> = {
   ecu: 'extreme close-up',
@@ -61,8 +62,8 @@ export const LIGHT_DIRECTION_TERMS: Record<LightDirectionId, string> = {
   'top':            'top-down overhead lighting',
   'bottom':         'underlighting from below',
   'rim':            'rim lighting',
-  '45-front-left':  '45° front-left key light',
-  '45-front-right': '45° front-right key light',
+  '45-front-left':  '45 front-left key light',
+  '45-front-right': '45 front-right key light',
 }
 
 export const STYLE_TERMS: Record<StyleId, string> = {
@@ -78,32 +79,53 @@ export const STYLE_TERMS: Record<StyleId, string> = {
   'minimal':       'clean minimal aesthetic',
 }
 
+export const VIDEO_STYLE_TERMS: Record<VideoStyleId, string> = {
+  'action':      'action film style',
+  'documentary': 'documentary style',
+  'commercial':  'commercial polished look',
+  'music-video': 'music video aesthetic',
+  'short-film':  'short film narrative style',
+  'news':        'broadcast news style',
+  'vlog':        'vlog casual style',
+  'comedy':      'comedy lighthearted style',
+  'horror':      'horror atmospheric style',
+}
+
 export const USE_CASE_TERMS: Record<UseCaseId, string> = {
+  'portrait':        'portrait photograph',
+  'fashion':         'fashion photography',
   'editorial-photo': 'editorial photograph',
   'product-mockup':  'product mockup photograph',
-  'poster':          'poster design',
-  'ui-screen':       'UI screenshot',
-  'concept-art':     'concept art illustration',
   'social-media':    'social media content',
+  'poster':          'poster design',
+  'album-cover':     'album cover artwork',
+  'concept-art':     'concept art illustration',
+  'fantasy-scifi':   'fantasy sci-fi illustration',
+  'anime-manga':     'anime illustration',
+  'architecture':    'architectural photograph',
+  'food':            'food photography',
+  'ui-screen':       'UI screenshot mockup',
+  'wallpaper':       'wallpaper artwork',
   'documentary':     'documentary photograph',
 }
 
-
 /** All constraint prompt terms — user picks from these */
 export const CONSTRAINT_OPTIONS = [
-  { id: 'no-watermark',    label: 'No watermark',     term: 'no watermark' },
-  { id: 'no-logos',        label: 'No logos',         term: 'no logos' },
-  { id: 'no-extra-text',   label: 'No extra text',    term: 'no extra text' },
-  { id: 'no-extra-people', label: 'No extra people',  term: 'no extra people in foreground' },
+  { id: 'no-watermark',    label: 'No watermark',        term: 'no watermark' },
+  { id: 'no-logos',        label: 'No logos',            term: 'no logos' },
+  { id: 'no-extra-text',   label: 'No extra text',       term: 'no extra text' },
+  { id: 'no-extra-people', label: 'No extra people',     term: 'no extra people in foreground' },
   { id: 'no-retouching',   label: 'No heavy retouching', term: 'no heavy retouching' },
-  { id: 'preserve-face',   label: 'Preserve face',    term: 'preserve the face exactly' },
-  { id: 'photoreal',       label: 'Photoreal',        term: 'photorealistic, believable' },
+  { id: 'preserve-face',   label: 'Preserve face',       term: 'preserve the face exactly' },
+  { id: 'photoreal',       label: 'Photoreal',           term: 'photorealistic, believable' },
+  { id: 'no-camera-shake', label: 'No camera shake',     term: 'no camera shake' },
+  { id: 'smooth-motion',   label: 'Smooth motion',       term: 'smooth continuous motion' },
 ] as const
 
 export type ConstraintId = typeof CONSTRAINT_OPTIONS[number]['id']
 
 /**
- * DOF_MAP: slider value (-1 to 8) → prompt term (null when unset).
+ * DOF_MAP: slider value (-1 to 8) prompt term (null when unset).
  * Exported so property tests can import it directly.
  */
 export const DOF_MAP: Record<number, string | null> = {
@@ -124,45 +146,70 @@ export const DOF_MAP: Record<number, string | null> = {
  * Exported so property tests can verify none appear in image-mode prompts.
  */
 export const MOVEMENT_TERMS: Record<MovementId, string> = {
-  'static':     'static locked shot',
-  'pan-left':   'slow pan left',
-  'pan-right':  'slow pan right',
-  'tilt-up':    'tilt up',
-  'tilt-down':  'tilt down',
-  'dolly-in':   'dolly in',
-  'dolly-out':  'dolly out',
-  'tracking':   'tracking shot',
-  'handheld':   'handheld verité',
-  'crane-up':   'crane jib up',
-  'crane-down': 'crane jib down',
-  'drone':      'drone aerial shot',
+  'static':      'static locked shot',
+  'handheld':    'handheld camera shot',
+  'zoom-out':    'zoom out',
+  'zoom-in':     'zoom in',
+  'cam-follows': 'camera follows subject',
+  'pan-left':    'camera pan left shot',
+  'pan-right':   'camera pan right shot',
+  'tilt-up':     'camera tilt up shot',
+  'tilt-down':   'camera tilt down shot',
+  'orbit':       'camera orbit around subject',
+  'dolly-in':    'camera dolly in shot',
+  'dolly-out':   'camera dolly out shot',
+  'jib-up':      'camera jib up shot',
+  'jib-down':    'camera jib down shot',
+  'drone':       'drone aerial shot',
+  'dolly-left':  'camera dolly left shot',
+  'dolly-right': 'camera dolly right shot',
 }
 
-// ─────────────────────────────────────────────
+/** Action presets for video Subject + Action section */
+export const ACTION_PRESETS = [
+  { id: 'walking',    label: 'Walking',     term: 'walking forward' },
+  { id: 'turning',    label: 'Turning',     term: 'slowly turning to face camera' },
+  { id: 'talking',    label: 'Talking',     term: 'speaking, mouth moving naturally' },
+  { id: 'running',    label: 'Running',     term: 'running' },
+  { id: 'sitting',    label: 'Sitting',     term: 'sitting still' },
+  { id: 'standing',   label: 'Standing',    term: 'standing still' },
+  { id: 'gesturing',  label: 'Gesturing',   term: 'gesturing with hands' },
+  { id: 'looking-up', label: 'Looking up',  term: 'slowly looking up' },
+  { id: 'dancing',    label: 'Dancing',     term: 'dancing' },
+  { id: 'idle',       label: 'Subtle idle', term: 'subtle natural idle movement' },
+] as const
+
+export type ActionPresetId = typeof ACTION_PRESETS[number]['id']
+
+// ──────────────────────────────────────────────
 // State factory
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 
 /** Returns a fresh initial GuideState. Never mutates anything. */
 export function initialGuideState(): GuideState {
   return {
-    mediaTab:    'image',
-    subject:     '',
-    shotSize:    null,
-    camera:      { ...DEFAULT_CAMERA },
-    angle:       null,
+    mediaTab:       'image',
+    subject:        '',
+    shotSize:       null,
+    camera:         { ...DEFAULT_CAMERA },
+    angle:          null,
     lighting:       [],
     lightDirection: null,
     style:          null,
     dof:            -1,
     useCase:        null,
-    constraints: [],
-    movement:    null,
+    constraints:    [],
+    // video-specific
+    movement:       null,
+    action:         '',
+    setting:        '',
+    videoStyle:     null,
   }
 }
 
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 // Pure state helpers
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 
 /**
  * addLighting — FIFO cap at 2.
@@ -202,22 +249,69 @@ export function resetState(_state: GuideState): GuideState {
   return initialGuideState()
 }
 
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 // Prompt assembly
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 
 /**
  * assemblePrompt — derives PromptSegments from GuideState.
  *
- * Follows fal.ai structured prompt format:
- * Subject → Shot/Camera/Angle → Lighting/Style/DOF/Mood → Use Case → Constraints → Movement
+ * IMAGE order:
+ *   Subject -> Shot/Camera/Angle -> Lighting/Direction -> Style/DOF -> UseCase -> Constraints
+ *
+ * VIDEO order:
+ *   Movement -> Subject + Action -> Shot Size -> Setting -> Video Style -> Constraints
  *
  * Rules:
- * - movement is omitted when mediaTab === 'image'
- * - dof is omitted when camera.aperture is non-null (camera aperture takes precedence)
- * - constraints are appended as a comma-separated list
+ * - video-specific fields (movement, action, setting, videoStyle) are omitted in image mode
+ * - image-specific fields (camera, angle, lighting, lightDirection, style, dof, useCase) are omitted in video mode
+ * - constraints are shared
  */
 export function assemblePrompt(state: GuideState): PromptSegments {
+  const constraintsStr =
+    state.constraints.length > 0
+      ? state.constraints
+          .map(id => CONSTRAINT_OPTIONS.find(c => c.id === id)?.term ?? id)
+          .join(', ')
+      : null
+
+  if (state.mediaTab === 'video') {
+    // Video prompt
+    const movement   = state.movement ? MOVEMENT_TERMS[state.movement] : null
+    const subject    = state.subject.trim() || null
+    const action     = state.action.trim() || null
+    const shotSize   = state.shotSize ? SHOT_SIZE_TERMS[state.shotSize] : null
+    const setting    = state.setting.trim() || null
+    const videoStyle = state.videoStyle ? VIDEO_STYLE_TERMS[state.videoStyle] : null
+
+    // Combine subject + action into one token for the full prompt
+    const subjectAction =
+      subject && action ? `${subject}, ${action}` : subject ?? action
+
+    const full = [movement, subjectAction, shotSize, setting, videoStyle, constraintsStr]
+      .filter((s): s is string => s !== null && s !== '')
+      .join(', ')
+
+    return {
+      subject,
+      shotSize,
+      camera:         null,
+      angle:          null,
+      lighting:       null,
+      lightDirection: null,
+      style:          null,
+      dof:            null,
+      useCase:        null,
+      constraints:    constraintsStr,
+      movement,
+      action,
+      setting,
+      videoStyle,
+      full,
+    }
+  }
+
+  // Image prompt
   const subject  = state.subject.trim() || null
   const shotSize = state.shotSize ? SHOT_SIZE_TERMS[state.shotSize] : null
   const cameraStr = buildCameraPrompt(state.camera) || null
@@ -232,26 +326,10 @@ export function assemblePrompt(state: GuideState): PromptSegments {
     ? LIGHT_DIRECTION_TERMS[state.lightDirection]
     : null
 
-  const style = state.style ? STYLE_TERMS[state.style] : null
-
-  const dof = DOF_MAP[state.dof] ?? null
-
+  const style  = state.style ? STYLE_TERMS[state.style] : null
+  const dof    = DOF_MAP[state.dof] ?? null
   const useCase = state.useCase ? USE_CASE_TERMS[state.useCase] : null
 
-  const constraintsStr =
-    state.constraints.length > 0
-      ? state.constraints
-          .map(id => CONSTRAINT_OPTIONS.find(c => c.id === id)?.term ?? id)
-          .join(', ')
-      : null
-
-  // Movement is omitted entirely in image mode
-  const movement =
-    state.mediaTab === 'video' && state.movement
-      ? MOVEMENT_TERMS[state.movement]
-      : null
-
-  // Join in the canonical order, skipping nulls
   const full = [
     subject,
     shotSize,
@@ -263,7 +341,6 @@ export function assemblePrompt(state: GuideState): PromptSegments {
     dof,
     useCase,
     constraintsStr,
-    movement,
   ]
     .filter((s): s is string => s !== null && s !== '')
     .join(', ')
@@ -271,22 +348,25 @@ export function assemblePrompt(state: GuideState): PromptSegments {
   return {
     subject,
     shotSize,
-    camera:      cameraStr,
+    camera:         cameraStr,
     angle,
-    lighting:        lightingStr,
+    lighting:       lightingStr,
     lightDirection,
     style,
     dof,
     useCase,
-    constraints: constraintsStr,
-    movement,
+    constraints:    constraintsStr,
+    movement:       null,
+    action:         null,
+    setting:        null,
+    videoStyle:     null,
     full,
   }
 }
 
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 // Studio URL builder
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
 
 /**
  * buildStudioUrl — pure function; does not mutate state.

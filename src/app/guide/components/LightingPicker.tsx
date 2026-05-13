@@ -4,13 +4,12 @@ import Image from 'next/image'
 import { useState } from 'react'
 import { addLighting, initialGuideState } from '../logic'
 import type { LightingId } from '../types'
+import { useT } from '@/lib/LanguageContext'
 
 // ── Lighting card definitions ─────────────────────────────────────────────────
 
 interface LightingCard {
   id: LightingId
-  label: string
-  description: string
   image: string   // path under /pic/guide/
   gradient: string
 }
@@ -18,71 +17,51 @@ interface LightingCard {
 const LIGHTING_CARDS: LightingCard[] = [
   {
     id: 'golden-hour',
-    label: 'Golden Hour',
-    description: 'Warm, golden sunlight just after sunrise or before sunset',
     image: '/pic/guide/golden-hour-lighting.png',
     gradient: 'from-amber-500 to-orange-600',
   },
   {
     id: 'blue-hour',
-    label: 'Blue Hour',
-    description: 'Cool, diffused twilight just before sunrise or after sunset',
     image: '/pic/guide/blue-hour-lighting.png',
     gradient: 'from-blue-700 to-indigo-900',
   },
   {
     id: 'overcast',
-    label: 'Overcast',
-    description: 'Soft, even light from a cloudy sky with no harsh shadows',
     image: '/pic/guide/overcast-diffused-lighting.png',
     gradient: 'from-slate-400 to-slate-600',
   },
   {
     id: 'hard-studio',
-    label: 'Hard Studio',
-    description: 'Strong directional light creating sharp, defined shadows',
     image: '/pic/guide/hard-studio-lighting.png',
     gradient: 'from-gray-100 to-gray-400',
   },
   {
     id: 'soft-studio',
-    label: 'Soft Studio',
-    description: 'Diffused studio light with gentle, flattering shadows',
     image: '/pic/guide/soft-studio-lighting.png',
     gradient: 'from-gray-200 to-gray-500',
   },
   {
     id: 'neon',
-    label: 'Neon',
-    description: 'Vivid coloured neon lights with a cyberpunk atmosphere',
     image: '/pic/guide/neon-cyberpunk-lighting.png',
     gradient: 'from-purple-600 to-pink-500',
   },
   {
     id: 'candlelight',
-    label: 'Candlelight',
-    description: 'Warm, flickering practical light with intimate shadows',
     image: '/pic/guide/candlelight-practical-lighting.png',
     gradient: 'from-orange-400 to-red-700',
   },
   {
     id: 'rembrandt',
-    label: 'Rembrandt',
-    description: 'Classic portrait lighting with a small triangle of light on the cheek',
     image: '/pic/guide/rembrandt-lighting.png',
     gradient: 'from-amber-800 to-stone-900',
   },
   {
     id: 'high-key',
-    label: 'High-Key',
-    description: 'Bright, low-contrast lighting with minimal shadows',
     image: '/pic/guide/high-key-lighting.png',
     gradient: 'from-white to-gray-200',
   },
   {
     id: 'low-key',
-    label: 'Low-Key',
-    description: 'Dark, moody lighting with deep shadows and high contrast',
     image: '/pic/guide/low-key-lighting.png',
     gradient: 'from-gray-800 to-black',
   },
@@ -105,7 +84,7 @@ function LightingThumbnail({ card, isActive }: { card: LightingCard; isActive: b
       <div className="relative w-full aspect-square rounded-lg overflow-hidden">
         <Image
           src={card.image}
-          alt={card.label}
+          alt=""
           fill
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 160px"
           className="object-cover"
@@ -127,6 +106,7 @@ function LightingThumbnail({ card, isActive }: { card: LightingCard; isActive: b
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function LightingPicker({ value, onChange }: LightingPickerProps) {
+  const t = useT()
   const [hoveredId, setHoveredId] = useState<LightingId | null>(null)
 
   return (
@@ -159,11 +139,11 @@ export function LightingPicker({ value, onChange }: LightingPickerProps) {
                   : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
               }`}
               aria-pressed={isActive}
-              aria-label={`${card.label}: ${card.description}`}
+              aria-label={`${t(`lighting.${card.id}.label`)}: ${t(`lighting.${card.id}.description`)}`}
             >
               <LightingThumbnail card={card} isActive={isActive} />
               <span className="text-[11px] font-medium text-center leading-tight">
-                {card.label}
+                {t(`lighting.${card.id}.label`)}
               </span>
             </button>
 
@@ -179,7 +159,7 @@ export function LightingPicker({ value, onChange }: LightingPickerProps) {
                 "
                 role="tooltip"
               >
-                {card.description}
+                {t(`lighting.${card.id}.description`)}
                 {/* Arrow */}
                 <span
                   className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"

@@ -69,3 +69,20 @@ body { -webkit-font-smoothing: antialiased; background: var(--color-base); color
 .media-fade-in {
   animation: media-fade-in 0.4s ease-out forwards;
 }
+
+/* ── zh-TW readability ────────────────────────────────────────────────────── */
+/* CJK characters at 10-11px are hard to read; bump up when zh-TW is active   */
+:lang(zh-TW) {
+  font-family: 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
+}
+
+/* Bump text-[10px] and text-[11px] to 12px for legibility in zh-TW */
+:lang(zh-TW) [class*="text-[10px]"],
+:lang(zh-TW) [class*="text-[11px]"] {
+  font-size: 12px !important;
+}
+
+/* tracking-widest is too tight for CJK glyphs — reduce to comfortable spacing */
+:lang(zh-TW) [class*="tracking-widest"] {
+  letter-spacing: 0.04em;
+}
