@@ -357,22 +357,22 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex flex-col md:flex-row overflow-auto flex-1 min-h-0">
+        {/* Body — mobile: single scroll column; desktop: side-by-side */}
+        <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden md:flex md:flex-row">
 
           {/* Media */}
-          <div className="md:w-[58%] bg-[#0d0d12] flex items-center justify-center flex-shrink-0 min-h-0">
+          <div className="md:w-[58%] bg-[#0d0d12] flex items-center justify-center md:overflow-hidden">
             {task.video_url ? (
               isVideo
-                ? <video src={task.video_url} controls autoPlay className="w-full h-full object-contain" style={{ maxHeight: 'min(70vh, 600px)' }} />
-                : <img src={task.video_url} alt={task.prompt} className="w-full h-full object-contain" style={{ maxHeight: 'min(70vh, 600px)' }} />
+                ? <video src={task.video_url} controls autoPlay className="w-full object-contain md:h-full" style={{ maxHeight: 'min(70vh, 600px)' }} />
+                : <img src={task.video_url} alt={task.prompt} className="w-full object-contain md:h-full" style={{ maxHeight: 'min(70vh, 600px)' }} />
             ) : (
               <span className="text-[#333] text-[13px]">{t('studio.detail.noPreviewText')}</span>
             )}
           </div>
 
           {/* Info panel */}
-          <div className="flex-1 flex flex-col gap-4 px-5 py-5 overflow-y-auto min-w-0">
+          <div className="flex-1 flex flex-col gap-4 px-5 py-5 md:overflow-y-auto min-w-0">
 
             {/* Prompt */}
             <div>
