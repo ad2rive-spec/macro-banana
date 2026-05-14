@@ -23,6 +23,8 @@ export type AngleId =
   | 'worms-eye'
   | 'dutch-tilt'
   | 'ots'
+  | '45-front-left' | '45-front-right'
+  | '45-rear-left' | '45-rear-right'
 
 export type LightingId =
   | 'golden-hour'

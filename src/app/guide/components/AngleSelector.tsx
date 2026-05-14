@@ -239,6 +239,67 @@ const OTSIcon = (
   </svg>
 )
 
+/** 45° front-left: camera at lower-left facing subject */
+const FrontLeftIcon = (
+  <svg viewBox="0 0 40 40" width={40} height={40} aria-hidden="true">
+    <circle cx={20} cy={18} r={3} fill="currentColor" opacity={0.6} />
+    {/* Arrow indicating subject facing direction (up) */}
+    <line x1={20} y1={15} x2={20} y2={10} stroke="currentColor" strokeWidth={1} opacity={0.4} />
+    {/* Camera at lower-left */}
+    <g transform="rotate(-45, 9, 32)">
+      <CameraRect cx={9} cy={32} w={16} h={10} />
+    </g>
+    {/* Sight-line */}
+    <line x1={13} y1={28} x2={18} y2={21} stroke="currentColor" strokeWidth={0.8} strokeDasharray="2 2" opacity={0.45} />
+    {/* "L" label */}
+    <text x={6} y={12} fontSize={7} fill="currentColor" opacity={0.55} fontFamily="sans-serif">L</text>
+  </svg>
+)
+
+/** 45° front-right: camera at lower-right facing subject */
+const FrontRightIcon = (
+  <svg viewBox="0 0 40 40" width={40} height={40} aria-hidden="true">
+    <circle cx={20} cy={18} r={3} fill="currentColor" opacity={0.6} />
+    <line x1={20} y1={15} x2={20} y2={10} stroke="currentColor" strokeWidth={1} opacity={0.4} />
+    {/* Camera at lower-right */}
+    <g transform="rotate(45, 31, 32)">
+      <CameraRect cx={31} cy={32} w={16} h={10} />
+    </g>
+    <line x1={27} y1={28} x2={22} y2={21} stroke="currentColor" strokeWidth={0.8} strokeDasharray="2 2" opacity={0.45} />
+    {/* "R" label */}
+    <text x={30} y={12} fontSize={7} fill="currentColor" opacity={0.55} fontFamily="sans-serif">R</text>
+  </svg>
+)
+
+/** 45° rear-left: camera at lower-left behind subject */
+const RearLeftIcon = (
+  <svg viewBox="0 0 40 40" width={40} height={40} aria-hidden="true">
+    <circle cx={20} cy={22} r={3} fill="currentColor" opacity={0.6} />
+    {/* Subject faces away — tick at top */}
+    <line x1={20} y1={19} x2={20} y2={13} stroke="currentColor" strokeWidth={1.2} opacity={0.5} />
+    {/* Camera at lower-left, aimed at subject's back */}
+    <g transform="rotate(-135, 9, 32)">
+      <CameraRect cx={9} cy={32} w={16} h={10} />
+    </g>
+    <line x1={13} y1={30} x2={18} y2={24} stroke="currentColor" strokeWidth={0.8} strokeDasharray="2 2" opacity={0.45} />
+    <text x={6} y={12} fontSize={7} fill="currentColor" opacity={0.55} fontFamily="sans-serif">L</text>
+  </svg>
+)
+
+/** 45° rear-right: camera at lower-right behind subject */
+const RearRightIcon = (
+  <svg viewBox="0 0 40 40" width={40} height={40} aria-hidden="true">
+    <circle cx={20} cy={22} r={3} fill="currentColor" opacity={0.6} />
+    <line x1={20} y1={19} x2={20} y2={13} stroke="currentColor" strokeWidth={1.2} opacity={0.5} />
+    {/* Camera at lower-right, aimed at subject's back */}
+    <g transform="rotate(135, 31, 32)">
+      <CameraRect cx={31} cy={32} w={16} h={10} />
+    </g>
+    <line x1={27} y1={30} x2={22} y2={24} stroke="currentColor" strokeWidth={0.8} strokeDasharray="2 2" opacity={0.45} />
+    <text x={30} y={12} fontSize={7} fill="currentColor" opacity={0.55} fontFamily="sans-serif">R</text>
+  </svg>
+)
+
 // ── Angle data ────────────────────────────────────────────────────────────────
 
 const ANGLE_DATA: { id: AngleId; image: string; icon: React.ReactNode }[] = [
@@ -249,6 +310,10 @@ const ANGLE_DATA: { id: AngleId; image: string; icon: React.ReactNode }[] = [
   { id: 'worms-eye',  image: '/pic/guide/worm-eye-view.jpg',      icon: WormsEyeIcon  },
   { id: 'dutch-tilt', image: '/pic/guide/dutch-tilt.jpg',         icon: DutchTiltIcon },
   { id: 'ots',        image: '/pic/guide/over-the-shoulder.jpg',  icon: OTSIcon       },
+  { id: '45-front-left',  image: '/pic/guide/45-front-left.jpg',  icon: FrontLeftIcon  },
+  { id: '45-front-right', image: '/pic/guide/45-front-right.jpg', icon: FrontRightIcon },
+  { id: '45-rear-left',  image: '/pic/guide/45-rear-left.jpg',   icon: RearLeftIcon   },
+  { id: '45-rear-right', image: '/pic/guide/45-rear-right.jpg',  icon: RearRightIcon  },
 ]
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -322,8 +387,9 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
               onFocus={() => setHoveredId(angle.id)}
               onBlur={() => setHoveredId(null)}
               className={`
+
                 relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 cursor-pointer w-full
-                \${
+                ${
                   isActive
                     ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
                     : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
@@ -331,7 +397,7 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
               `}
               title={description}
               aria-pressed={isActive}
-              aria-label={`\${label}: \${description}`}
+              aria-label={`${label}: ${description}`}
             >
               {/* Thumbnail image with SVG icon fallback */}
               <AngleThumbnail angle={angle} isActive={isActive} />

@@ -39,6 +39,10 @@ export const ANGLE_TERMS: Record<AngleId, string> = {
   'worms-eye':  "worm's eye view",
   'dutch-tilt': 'dutch tilt',
   'ots':        'over-the-shoulder',
+  '45-front-left':  '45-degree front-left angle',
+  '45-front-right': '45-degree front-right angle',
+  '45-rear-left':   '45-degree rear-left angle',
+  '45-rear-right':  '45-degree rear-right angle',
 }
 
 export const LIGHTING_TERMS: Record<LightingId, string> = {

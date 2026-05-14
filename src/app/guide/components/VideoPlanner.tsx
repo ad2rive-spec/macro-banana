@@ -137,6 +137,10 @@ const ANGLES: { id: AngleId; label: string; tip: string }[] = [
   { id: 'worms-eye',  label: "Worm's Eye",          tip: 'Extreme low angle from the ground. Dramatic and imposing.' },
   { id: 'dutch-tilt', label: 'Dutch Tilt',          tip: 'Camera canted at an angle. Creates unease or tension.' },
   { id: 'ots',        label: 'Over-the-Shoulder',   tip: 'Camera behind one character looking at another. Conversation depth.' },
+  { id: '45-front-left',  label: '45° Front-Left',  tip: 'Camera at 45° in front-left of the subject. Natural and flattering.' },
+  { id: '45-front-right', label: '45° Front-Right', tip: 'Camera at 45° in front-right of the subject. Natural and flattering.' },
+  { id: '45-rear-left',  label: '45° Rear-Left',   tip: 'Camera at 45° behind-left of the subject. Reveals environment ahead.' },
+  { id: '45-rear-right', label: '45° Rear-Right',  tip: 'Camera at 45° behind-right of the subject. Reveals environment ahead.' },
 ]
 
 const LIGHTINGS: { id: LightingId; label: string; tip: string }[] = [
@@ -1571,6 +1575,7 @@ function MultiShotCard({ shot, index, total, assets, planMode, remaining, onUpda
                           {a.tag}
                         </span>
                         <span className="text-[10px]" style={{ color: 'var(--color-faint)' }}>
+
                           {a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name}
                         </span>
                       </div>
