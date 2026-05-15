@@ -355,14 +355,21 @@ export default function GuidePage() {
                         </p>
                       </div>
                     ))}
-                    <button
-                      onClick={() => imageRefInputRef.current?.click()}
-                      className="w-16 h-16 rounded-lg border border-dashed flex items-center justify-center cursor-pointer transition-all flex-shrink-0"
-                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted)' }}
-                      onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--color-purple)')}
-                      onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
-                      <iconify-icon icon="lucide:plus" width="20" height="20" style={{ display: 'block' }} />
-                    </button>
+                    <div className="relative group/imgref flex-shrink-0">
+                      <button
+                        onClick={() => imageRefInputRef.current?.click()}
+                        className="w-16 h-16 rounded-lg border border-dashed flex items-center justify-center cursor-pointer transition-all"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-muted)' }}
+                        onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--color-purple)')}
+                        onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
+                        <iconify-icon icon="lucide:plus" width="20" height="20" style={{ display: 'block' }} />
+                      </button>
+                      <div className="absolute bottom-[calc(100%+6px)] left-0 sm:left-1/2 sm:-translate-x-1/2 w-max max-w-[calc(100vw-32px)] rounded-xl px-3 py-2 shadow-lg pointer-events-none opacity-0 group-hover/imgref:opacity-100 transition-opacity z-50 border"
+                        style={{ background: 'var(--color-panel)', borderColor: 'var(--color-border)' }}>
+                        <div className="text-[11px] font-medium" style={{ color: 'var(--color-text)' }}>🖼 Image only</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: 'var(--color-faint)' }}>Max 30 MB · up to 9 images</div>
+                      </div>
+                    </div>
                     <input
                       ref={imageRefInputRef}
                       type="file"

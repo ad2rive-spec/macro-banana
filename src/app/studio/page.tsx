@@ -126,6 +126,69 @@ const REF_LIMITS: Record<string, { max: number; desc: string }> = {
   'doubao-seedance-2-0-fast-260128':{ max: 12, desc: 'Up to 12 refs (images + videos + audio)' },
 }
 
+// File size limits per model (in bytes)
+// Sources: OpenAI docs (20MB/image for gpt-image-2),
+//          Google Gemini docs (20MB inline for images/video),
+//          ByteDance Seedance docs: image 30MB, video 50MB/each (total ≤50MB), audio 15MB
+const FILE_SIZE_LIMITS: Record<string, {
+  image: number        // max bytes per image file
+  video?: number       // max bytes per video file
+  audio?: number       // max bytes per audio file
+  firstLastFrame?: number  // max bytes for first/last frame images
+  maxImages?: number   // max number of image files
+  maxVideos?: number   // max number of video files
+  maxAudios?: number   // max number of audio files
+  videoTotalLimit?: number  // total video size limit (all clips combined)
+}> = {
+  'gpt-image-2': {
+    image: 20 * 1024 * 1024,           // 20 MB
+  },
+  'nano-banana-2': {
+    image: 20 * 1024 * 1024,           // 20 MB
+  },
+  'nano-banana-pro': {
+    image: 20 * 1024 * 1024,           // 20 MB
+  },
+  'doubao-seedance-2-0-260128': {
+    image: 30 * 1024 * 1024,           // 30 MB per image, max 9
+    video: 50 * 1024 * 1024,           // 50 MB per clip, max 3, total ≤50MB
+    audio: 15 * 1024 * 1024,           // 15 MB per file, max 3
+    firstLastFrame: 30 * 1024 * 1024,  // 30 MB (same as image)
+    maxImages: 9,
+    maxVideos: 3,
+    maxAudios: 3,
+    videoTotalLimit: 50 * 1024 * 1024,
+  },
+  'doubao-seedance-2-0-fast-260128': {
+    image: 30 * 1024 * 1024,
+    video: 50 * 1024 * 1024,
+    audio: 15 * 1024 * 1024,
+    firstLastFrame: 30 * 1024 * 1024,
+    maxImages: 9,
+    maxVideos: 3,
+    maxAudios: 3,
+    videoTotalLimit: 50 * 1024 * 1024,
+  },
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)}GB`
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)}MB`
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)}KB`
+  return `${bytes}B`
+}
+
+function checkFileSize(file: File, model: string, kind: 'image' | 'video' | 'audio' | 'firstLastFrame'): string | null {
+  const limits = FILE_SIZE_LIMITS[model]
+  if (!limits) return null
+  const limit = limits[kind]
+  if (limit === undefined) return null
+  if (file.size > limit) {
+    return `"${file.name}" exceeds the ${formatBytes(limit)} limit for ${kind} files (${formatBytes(file.size)})`
+  }
+  return null
+}
+
 const STATUS_COLOR: Record<string, string> = {
   queued: '#55556a', running: '#FFD700', succeeded: '#4ade80', failed: '#f87171', expired: '#55556a',
 }
@@ -1594,9 +1657,15 @@ function StudioPageInner() {
                             <button onClick={() => setFirstFrame(null)} className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border-none cursor-pointer text-white text-[11px]">✕</button>
                           </div>
                         ) : (
-                          <button onClick={() => firstFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#FFD700]/50 bg-white/[0.03] hover:bg-[#FFD700]/[0.06] flex items-center justify-center text-[#444] hover:text-[#FFD700] transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
+                          <div className="relative group/ffbtn flex-shrink-0">
+                            <button onClick={() => firstFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#FFD700]/50 bg-white/[0.03] hover:bg-[#FFD700]/[0.06] flex items-center justify-center text-[#444] hover:text-[#FFD700] transition-all cursor-pointer"><IconPlus /></button>
+                            <div className="absolute bottom-[calc(100%+6px)] left-0 sm:left-1/2 sm:-translate-x-1/2 w-max max-w-[calc(100vw-32px)] bg-[#1c1c26] border border-white/10 rounded-xl px-3 py-2 shadow-lg pointer-events-none opacity-0 group-hover/ffbtn:opacity-100 transition-opacity z-50">
+                              <div className="text-[11px] text-[#bbb] font-medium">Image only</div>
+                              <div className="text-[10px] text-[#555] mt-0.5">Max {formatBytes(FILE_SIZE_LIMITS[model]?.firstLastFrame ?? 10*1024*1024)}</div>
+                            </div>
+                          </div>
                         )}
-                        <input ref={firstFrameRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setFirstFrame(f) }} />
+                        <input ref={firstFrameRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { const err = checkFileSize(f, model, 'firstLastFrame'); if (err) { setError(err); return } setFirstFrame(f) } }} />
                       </div>
                       <div className="hidden sm:block w-px h-6 bg-white/[0.07]" />
                       <div className="flex items-center gap-1.5">
@@ -1607,17 +1676,45 @@ function StudioPageInner() {
                             <button onClick={() => setLastFrame(null)} className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border-none cursor-pointer text-white text-[11px]">✕</button>
                           </div>
                         ) : (
-                          <button onClick={() => lastFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#FFD700]/50 bg-white/[0.03] hover:bg-[#FFD700]/[0.06] flex items-center justify-center text-[#444] hover:text-[#FFD700] transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
+                          <div className="relative group/lfbtn flex-shrink-0">
+                            <button onClick={() => lastFrameRef.current?.click()} className="w-9 h-9 rounded-lg border border-dashed border-white/[0.15] hover:border-[#FFD700]/50 bg-white/[0.03] hover:bg-[#FFD700]/[0.06] flex items-center justify-center text-[#444] hover:text-[#FFD700] transition-all cursor-pointer"><IconPlus /></button>
+                            <div className="absolute bottom-[calc(100%+6px)] left-0 sm:left-1/2 sm:-translate-x-1/2 w-max max-w-[calc(100vw-32px)] bg-[#1c1c26] border border-white/10 rounded-xl px-3 py-2 shadow-lg pointer-events-none opacity-0 group-hover/lfbtn:opacity-100 transition-opacity z-50">
+                              <div className="text-[11px] text-[#bbb] font-medium">Image only</div>
+                              <div className="text-[10px] text-[#555] mt-0.5">Max {formatBytes(FILE_SIZE_LIMITS[model]?.firstLastFrame ?? 10*1024*1024)}</div>
+                            </div>
+                          </div>
                         )}
-                        <input ref={lastFrameRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setLastFrame(f) }} />
+                        <input ref={lastFrameRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { const err = checkFileSize(f, model, 'firstLastFrame'); if (err) { setError(err); return } setLastFrame(f) } }} />
                       </div>
                     </div>
                   ) : tab === 'video' && model.includes('seedance') && seedanceMode === 'omni_reference' ? (
                     <div className="flex items-start gap-1.5 flex-wrap">
                       {refs.length < 12 && (
-                        <button onClick={() => fileRef.current?.click()} className="w-7 h-7 rounded-full border border-white/10 bg-white/[0.07] hover:bg-white/[0.13] flex items-center justify-center text-[#777] hover:text-white transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
+                        <div className="relative group/vomni flex-shrink-0">
+                          <button onClick={() => fileRef.current?.click()} className="w-7 h-7 rounded-full border border-white/10 bg-white/[0.07] hover:bg-white/[0.13] flex items-center justify-center text-[#777] hover:text-white transition-all cursor-pointer"><IconPlus /></button>
+                          <div className="absolute bottom-[calc(100%+6px)] left-0 sm:left-1/2 sm:-translate-x-1/2 w-max max-w-[calc(100vw-32px)] bg-[#1c1c26] border border-white/10 rounded-xl px-3 py-2 shadow-lg pointer-events-none opacity-0 group-hover/vomni:opacity-100 transition-opacity z-50">
+                            <div className="text-[11px] text-[#bbb] font-medium">Image · Video · Audio</div>
+                            <div className="text-[10px] text-[#555] mt-1 flex flex-col gap-0.5">
+                              <span>🖼 Image: max {formatBytes(FILE_SIZE_LIMITS[model]?.image ?? 30*1024*1024)} · up to {FILE_SIZE_LIMITS[model]?.maxImages ?? 9}</span>
+                              <span>🎬 Video: max {formatBytes(FILE_SIZE_LIMITS[model]?.video ?? 50*1024*1024)}/clip · up to {FILE_SIZE_LIMITS[model]?.maxVideos ?? 3} · total ≤{formatBytes(FILE_SIZE_LIMITS[model]?.videoTotalLimit ?? 50*1024*1024)}</span>
+                              <span>🎵 Audio: max {formatBytes(FILE_SIZE_LIMITS[model]?.audio ?? 15*1024*1024)} · up to {FILE_SIZE_LIMITS[model]?.maxAudios ?? 3}</span>
+                            </div>
+                            <div className="text-[10px] text-[#555] mt-1">{refs.length} / 12 used</div>
+                          </div>
+                        </div>
                       )}
-                      <input ref={fileRef} type="file" accept="image/*,video/*,audio/*" multiple className="hidden" onChange={e => { if (e.target.files) setRefs(p => [...p, ...Array.from(e.target.files!)].slice(0, 12)) }} />
+                      <input ref={fileRef} type="file" accept="image/*,video/*,audio/*" multiple className="hidden" onChange={e => {
+                        if (!e.target.files) return
+                        const errors: string[] = []
+                        const valid = Array.from(e.target.files).filter(f => {
+                          const kind = f.type.startsWith('video/') ? 'video' : f.type.startsWith('audio/') ? 'audio' : 'image'
+                          const err = checkFileSize(f, model, kind)
+                          if (err) { errors.push(err); return false }
+                          return true
+                        })
+                        if (errors.length) setError(errors[0])
+                        if (valid.length) setRefs(p => [...p, ...valid].slice(0, 12))
+                      }} />
                       {refs.map((f, i) => {
                         const isVid = f.type.startsWith('video/')
                         const isAud = f.type.startsWith('audio/')
@@ -1644,9 +1741,26 @@ function StudioPageInner() {
                   ) : tab === 'image' && imageRefMode === 'omni_reference' ? (
                     <div className="flex items-start gap-1.5 flex-wrap">
                       {refs.length < 12 && (
-                        <button onClick={() => fileRef.current?.click()} className="w-7 h-7 rounded-full border border-white/10 bg-white/[0.07] hover:bg-white/[0.13] flex items-center justify-center text-[#777] hover:text-white transition-all cursor-pointer flex-shrink-0"><IconPlus /></button>
+                        <div className="relative group/iomni flex-shrink-0">
+                          <button onClick={() => fileRef.current?.click()} className="w-7 h-7 rounded-full border border-white/10 bg-white/[0.07] hover:bg-white/[0.13] flex items-center justify-center text-[#777] hover:text-white transition-all cursor-pointer"><IconPlus /></button>
+                          <div className="absolute bottom-[calc(100%+6px)] left-0 sm:left-1/2 sm:-translate-x-1/2 w-max max-w-[calc(100vw-32px)] bg-[#1c1c26] border border-white/10 rounded-xl px-3 py-2 shadow-lg pointer-events-none opacity-0 group-hover/iomni:opacity-100 transition-opacity z-50">
+                            <div className="text-[11px] text-[#bbb] font-medium">Image only</div>
+                            <div className="text-[10px] text-[#555] mt-0.5">🖼 Max {formatBytes(FILE_SIZE_LIMITS[model]?.image ?? 20*1024*1024)}</div>
+                            <div className="text-[10px] text-[#555] mt-0.5">{refs.length} / 12 used</div>
+                          </div>
+                        </div>
                       )}
-                      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => { if (e.target.files) setRefs(p => [...p, ...Array.from(e.target.files!)].slice(0, 12)) }} />
+                      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => {
+                        if (!e.target.files) return
+                        const errors: string[] = []
+                        const valid = Array.from(e.target.files).filter(f => {
+                          const err = checkFileSize(f, model, 'image')
+                          if (err) { errors.push(err); return false }
+                          return true
+                        })
+                        if (errors.length) setError(errors[0])
+                        if (valid.length) setRefs(p => [...p, ...valid].slice(0, 12))
+                      }} />
                       {refs.map((f, i) => {
                         const tag = `@image${i + 1}`
                         return (
@@ -1674,14 +1788,29 @@ function StudioPageInner() {
                               className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer ${atLimit ? 'bg-white/[0.03] border-white/[0.06] text-[#444] cursor-not-allowed' : 'bg-white/[0.07] hover:bg-white/[0.13] border-white/10 text-[#777] hover:text-white'}`}>
                               <IconPlus />
                             </button>
-                            <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-[#1c1c26] border border-white/10 rounded-xl px-3 py-2 shadow-lg pointer-events-none opacity-0 group-hover/refbtn:opacity-100 transition-opacity z-50 w-max max-w-[200px]">
-                              <div className="text-[11px] text-[#bbb] font-medium whitespace-nowrap">{refLimit?.desc ?? 'Add reference image'}</div>
-                              {refs.length > 0 && <div className={`text-[10px] mt-0.5 ${atLimit ? 'text-amber-400' : 'text-[#555]'}`}>{refs.length} / {maxRefs} used{atLimit ? ' — limit reached' : ''}</div>}
+                            <div className="absolute bottom-[calc(100%+6px)] left-0 sm:left-1/2 sm:-translate-x-1/2 w-max max-w-[calc(100vw-32px)] bg-[#1c1c26] border border-white/10 rounded-xl px-3 py-2 shadow-lg pointer-events-none opacity-0 group-hover/refbtn:opacity-100 transition-opacity z-50">
+                              <div className="text-[11px] text-[#bbb] font-medium whitespace-nowrap">{refLimit?.desc ?? 'Add reference'}</div>
+                              <div className="text-[10px] text-[#555] mt-1 flex flex-col gap-0.5">
+                                <span>🖼 Image: max {formatBytes(FILE_SIZE_LIMITS[model]?.image ?? 20*1024*1024)}</span>
+                                {FILE_SIZE_LIMITS[model]?.video && <span>🎬 Video: max {formatBytes(FILE_SIZE_LIMITS[model]!.video!)}</span>}
+                              </div>
+                              <div className={`text-[10px] mt-1 ${atLimit ? 'text-amber-400' : 'text-[#555]'}`}>{refs.length} / {maxRefs} used{atLimit ? ' — limit reached' : ''}</div>
                             </div>
                           </div>
                         )
                       })()}
-                      <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={e => { if (e.target.files) setRefs(p => [...p, ...Array.from(e.target.files!)].slice(0, REF_LIMITS[model]?.max ?? 9)) }} />
+                      <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={e => {
+                        if (!e.target.files) return
+                        const errors: string[] = []
+                        const valid = Array.from(e.target.files).filter(f => {
+                          const kind = f.type.startsWith('video/') ? 'video' : 'image'
+                          const err = checkFileSize(f, model, kind)
+                          if (err) { errors.push(err); return false }
+                          return true
+                        })
+                        if (errors.length) setError(errors[0])
+                        if (valid.length) setRefs(p => [...p, ...valid].slice(0, REF_LIMITS[model]?.max ?? 9))
+                      }} />
                       {refs.map((f, i) => (
                         <RefThumb key={i} file={f} onRemove={() => { setRefs(p => { const next = p.filter((_, j) => j !== i); if (next.length === 0 && ratio === 'auto') setRatio(modelOpts.ratios.find(r => r !== 'auto') || '1:1'); return next }) }} />
                       ))}
@@ -1964,7 +2093,6 @@ function StudioPageInner() {
           onClose={() => setSelectedTask(null)}
           isPersonal={!isGroup}
           onAddToGroup={(addedTask) => {
-            // avoid duplicates
             setGroupExtra(prev =>
               prev.find(x => x.task_id === addedTask.task_id)
                 ? prev
@@ -1977,9 +2105,7 @@ function StudioPageInner() {
             fetch(url).then(r => r.blob()).then(blob => {
               const isVideoFile = name.endsWith('.mp4') || name.endsWith('.webm') || name.endsWith('.mov')
               const file = new File([blob], name, { type: blob.type || (isVideoFile ? 'video/mp4' : 'image/png') })
-
               if (!isVideoFile) {
-                // Image ref → always switch to image tab + omni_reference (image-to-image)
                 setTab('image')
                 const s = typeof window !== 'undefined' ? loadSettings() : {}
                 const m = (s.defaultImageModel as string) || IMAGE_MODELS[0].value
@@ -1990,8 +2116,8 @@ function StudioPageInner() {
                 setImageRefMode('omni_reference')
                 setRefs([file])
               } else {
-                // Video ref → switch to video tab + omni_reference
                 setTab('video')
+             
                 const s = typeof window !== 'undefined' ? loadSettings() : {}
                 const m = (s.defaultVideoModel as string) || VIDEO_MODELS[0].value
                 setModel(m)
@@ -2010,6 +2136,9 @@ function StudioPageInner() {
               }
             }, 0)
           }}
+          onMaskConfirm={(maskDataUrl, editPrompt, params, refs) =>
+            handleMaskConfirm(selectedTask, maskDataUrl, editPrompt, params, refs)
+          }
         />
       )}
     </div>
