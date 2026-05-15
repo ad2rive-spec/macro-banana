@@ -681,12 +681,22 @@ export function MaskEditor({ imageUrl, initialParams, onConfirm, onCancel }: Mas
 
         {/* Prompt input + Generate */}
         <div className="flex items-center gap-2 bg-[#17171e] border border-white/[0.09] rounded-2xl px-3 py-2">
-          <input ref={refFileRef} type="file" accept="image/*" multiple className="hidden"
-            onChange={e => { if (e.target.files) { setRefs(p => [...p, ...Array.from(e.target.files!)].slice(0, 16)); e.target.value = '' } }} />
-
-          {/* + add ref button */}
+          {/* + add ref button — opens file picker via dynamic input to avoid overflow:hidden blocking */}
           <button
-            onClick={() => refFileRef.current?.click()}
+            type="button"
+            onClick={() => {
+              const input = document.createElement('input')
+              input.type = 'file'
+              input.accept = 'image/*'
+              input.multiple = true
+              input.onchange = (e) => {
+                const files = (e.target as HTMLInputElement).files
+                if (files) setRefs(p => [...p, ...Array.from(files)].slice(0, 16))
+              }
+              document.body.appendChild(input)
+              input.click()
+              setTimeout(() => document.body.removeChild(input), 1000)
+            }}
             title={t('mask.addRef')}
             className="w-7 h-7 rounded-lg border border-dashed border-white/20 bg-white/[0.05] hover:bg-white/[0.10] flex items-center justify-center text-[#555] hover:text-white transition-all cursor-pointer flex-shrink-0"
           >
