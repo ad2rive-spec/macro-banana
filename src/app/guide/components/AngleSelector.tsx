@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import type { AngleId } from '../types'
 import { useT } from '@/lib/LanguageContext'
+import { Tooltip } from '@/components/Tooltip'
 
 // ── Angle definitions ─────────────────────────────────────────────────────────
 
@@ -364,7 +365,6 @@ function AngleThumbnail({ angle, isActive }: { angle: { id: AngleId; image: stri
 
 export function AngleSelector({ value, onChange }: AngleSelectorProps) {
   const t = useT()
-  const [hoveredId, setHoveredId] = useState<AngleId | null>(null)
 
   return (
     <div
@@ -374,20 +374,14 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
     >
       {ANGLE_DATA.map(angle => {
         const isActive = value === angle.id
-        const isHovered = hoveredId === angle.id
         const label = t(`angle.${angle.id}.label`)
         const description = t(`angle.${angle.id}.description`)
 
         return (
-          <div key={angle.id} className="relative">
+          <Tooltip key={angle.id} content={description}>
             <button
               onClick={() => onChange(isActive ? null : angle.id)}
-              onMouseEnter={() => setHoveredId(angle.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onFocus={() => setHoveredId(angle.id)}
-              onBlur={() => setHoveredId(null)}
               className={`
-
                 relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 cursor-pointer w-full
                 ${
                   isActive
@@ -395,7 +389,6 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
                     : 'bg-[var(--color-raised)] border-[var(--color-border)] hover:border-[var(--color-muted)]'
                 }
               `}
-              title={description}
               aria-pressed={isActive}
               aria-label={`${label}: ${description}`}
             >
@@ -407,28 +400,7 @@ export function AngleSelector({ value, onChange }: AngleSelectorProps) {
                 {label}
               </span>
             </button>
-
-            {/* Tooltip */}
-            {isHovered && (
-              <div
-                className="
-                  absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
-                  px-2 py-1 rounded-md text-[11px] leading-snug text-center
-                  bg-[var(--color-hover)] border border-[var(--color-border)]
-                  text-[var(--color-text)] whitespace-nowrap pointer-events-none
-                  shadow-lg
-                "
-                role="tooltip"
-              >
-                {description}
-                {/* Arrow */}
-                <span
-                  className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"
-                  aria-hidden="true"
-                />
-              </div>
-            )}
-          </div>
+          </Tooltip>
         )
       })}
     </div>

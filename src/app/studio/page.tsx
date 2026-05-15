@@ -6,7 +6,7 @@ import { submitTask, saveTask, loadTasks, loadSettings, getTaskStatus, type Task
 import { usePolling } from '@/hooks/usePolling'
 import { useToast } from '@/components/Toast'
 import { useT } from '@/lib/LanguageContext'
-import { MaskEditor } from '@/components/MaskEditor'
+import { MaskEditor, type EditParams } from '@/components/MaskEditor'
 
 // ── Icons via Iconify (lucide set) ──
 // Usage: <iconify-icon icon="lucide:xxx" width="N" height="N" />
@@ -21,6 +21,7 @@ const IconDuration = () => <iconify-icon icon="lucide:timer"        width="13" h
 const IconAudio    = () => <iconify-icon icon="lucide:volume-2"     width="13" height="13" />
 const IconAudioOff = () => <iconify-icon icon="lucide:volume-x"     width="13" height="13" />
 const IconBackground = () => <iconify-icon icon="lucide:layers"     width="13" height="13" />
+const IconGrounding  = () => <iconify-icon icon="lucide:search"      width="13" height="13" />
 const IconMode     = () => <iconify-icon icon="lucide:workflow"     width="13" height="13" />
 const IconSend     = () => <iconify-icon icon="lucide:send" width="18" height="18" style={{display:'block'}} />
 
@@ -64,6 +65,7 @@ const MODEL_OPTIONS: Record<string, ModelOptions> = {
     ratios:      ['auto', '1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9', '1:4', '4:1', '1:8', '8:1'],
     resolutions: ['512', '1K', '2K', '4K'],
     thinking:    ['minimal', 'high'],
+    grounding:   ['off', 'web', 'web+image'],
   },
   // Nano Banana Pro (gemini-3-pro-image-preview)
   // thinking always on, no quality param, no 512 resolution
@@ -71,6 +73,7 @@ const MODEL_OPTIONS: Record<string, ModelOptions> = {
   'nano-banana-pro': {
     ratios:      ['auto', '1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'],
     resolutions: ['1K', '2K', '4K'],
+    grounding:   ['off', 'web'],
   },
   // Seedance 2.0 Pro: 480p/720p/1080p, all ratios, 4-15s, audio
   // auto ratio: only valid for first_last_frames mode (i2i)
@@ -200,13 +203,33 @@ function Popover({ trigger, children }: { trigger: React.ReactNode; children: Re
     return () => document.removeEventListener('mousedown', h)
   }, [open])
 
-  // Clamp upward position so it doesn't clip behind Navbar
+  // Clamp to viewport — prevents clipping on mobile edges and behind Navbar
   useEffect(() => {
     if (!open || !menuRef.current || !ref.current) return
-    const menuRect = menuRef.current.getBoundingClientRect()
-    if (menuRect.top < 52) { // 52px = navbar height
-      menuRef.current.style.bottom = `calc(100% + 6px - ${menuRect.top - 52}px)`
-    }
+    const el = menuRef.current
+    // Reset to default centred position first so measurement is accurate
+    el.style.bottom = ''
+    el.style.transform = ''
+
+    requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect()
+      const MARGIN = 8
+      const NAVBAR = 52
+
+      // Vertical: push down if clipped above navbar
+      if (rect.top < NAVBAR) {
+        el.style.bottom = `calc(100% + 6px - ${rect.top - NAVBAR}px)`
+      }
+
+      // Horizontal: shift so menu stays within viewport
+      let shiftX = 0
+      if (rect.left < MARGIN) {
+        shiftX = MARGIN - rect.left
+      } else if (rect.right > window.innerWidth - MARGIN) {
+        shiftX = (window.innerWidth - MARGIN) - rect.right
+      }
+      el.style.transform = `translateX(calc(-50% + ${shiftX}px))`
+    })
   }, [open])
 
   return (
@@ -307,29 +330,30 @@ const MODEL_LABELS: Record<string, string> = {
   'doubao-seedance-2-0-fast-260128': 'Seedance 2.0 Fast',
 }
 
-function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, onEditRegion, isPersonal }: {
+function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, onMaskConfirm, isPersonal }: {
   task: Task
   onClose: () => void
   onUseAsRef: (url: string) => void
   onReusePrompt: (prompt: string) => void
   onAddToGroup?: (task: Task) => void
-  onEditRegion?: (task: Task) => void
+  onMaskConfirm?: (maskDataUrl: string, prompt: string, params: EditParams, refs: File[]) => void
   isPersonal?: boolean
 }) {
   const t = useT()
+  const [editMode, setEditMode] = useState(false)
   const isVideo = task.video_url?.endsWith('.mp4') || task.video_url?.endsWith('.webm') || task.video_url?.endsWith('.mov')
 
-  // close on backdrop click
-  function handleBackdrop(e: React.MouseEvent) {
-    if (e.target === e.currentTarget) onClose()
-  }
-
-  // close on Escape key
+  // Escape: exit edit mode first, then close
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (editMode) setEditMode(false)
+        else onClose()
+      }
+    }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, editMode])
 
   const meta: { label: string; value: string }[] = [
     { label: t('studio.param.model'),      value: MODEL_LABELS[task.model || ''] || task.model || '—' },
@@ -341,10 +365,80 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
     { label: t('studio.param.taskId'),     value: task.task_id },
   ]
 
+  // ── Edit mode — full-screen expanded layout ────────────────────────────────
+  if (editMode && task.video_url && !isVideo && onMaskConfirm) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-4">
+        <div
+          className="border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.9)] flex overflow-hidden"
+          style={{ width: 'min(98vw, 1500px)', height: 'min(95vh, 900px)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Left: inline MaskEditor */}
+          <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+            <MaskEditor
+              imageUrl={task.video_url}
+              initialParams={{
+                model:      task.model || 'gpt-image-2',
+                ratio:      task.ratio  || 'auto',
+                resolution: task.resolution || '1K',
+                quality:    'medium',
+                background: 'auto',
+              }}
+              onConfirm={(maskDataUrl, prompt, params, refs) => {
+                onMaskConfirm(maskDataUrl, prompt, params, refs)
+                setEditMode(false)
+                onClose()
+              }}
+              onCancel={() => setEditMode(false)}
+            />
+          </div>
+
+          {/* Right: compact details panel — desktop only */}
+          <div className="w-[260px] flex-shrink-0 border-l border-white/[0.07] flex-col bg-[#17171e] hidden md:flex">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.07] flex-shrink-0">
+              <span className="text-[12px] font-semibold text-[#aaa]">Details</span>
+              <button
+                onClick={onClose}
+                className="w-6 h-6 rounded-full bg-white/[0.07] hover:bg-white/15 border-none cursor-pointer text-[#666] hover:text-white flex items-center justify-center transition-all text-[13px]"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+              {task.prompt && (
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#444] mb-1.5">
+                    {t('studio.detail.promptLabel')}
+                  </div>
+                  <p className="text-[11px] text-[#888] leading-relaxed break-words">{task.prompt}</p>
+                </div>
+              )}
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#444] mb-1.5">
+                  {t('studio.detail.parameters')}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {meta.map(m => (
+                    <div key={m.label} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/[0.05]">
+                      <span className="text-[9px] text-[#444]">{m.label}</span>
+                      <span className="text-[10px] text-[#999] font-medium">{m.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── View mode ──────────────────────────────────────────────────────────────
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
-      onClick={handleBackdrop}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="bg-[#17171e] border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.8)] w-[95vw] max-w-[1200px] max-h-[92vh] flex flex-col overflow-hidden">
 
@@ -397,6 +491,14 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
 
             {/* Actions */}
             <div className="flex flex-col gap-2 mt-auto pt-2">
+              {task.video_url && !isVideo && onMaskConfirm && (
+                <button onClick={() => setEditMode(true)}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
+                  <iconify-icon icon="lucide:pencil-ruler" width="14" height="14" />
+                  {t('studio.detail.editRegion')}
+                </button>
+              )}
+
               {task.video_url && (
                 <button onClick={() => { onReusePrompt(task.prompt || ''); onClose() }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
@@ -421,14 +523,6 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 </button>
               )}
 
-              {task.video_url && !isVideo && onEditRegion && (
-                <button onClick={() => { onEditRegion(task); onClose() }}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[13px] text-[#FFD700] font-medium cursor-pointer transition-all border-none">
-                  <iconify-icon icon="lucide:pencil-ruler" width="14" height="14" />
-                  {t('studio.detail.editRegion')}
-                </button>
-              )}
-
               {task.video_url && !isVideo && (
                 <button onClick={() => {
                   localStorage.setItem('grid_pending_image', task.video_url!)
@@ -440,20 +534,20 @@ function DetailModal({ task, onClose, onUseAsRef, onReusePrompt, onAddToGroup, o
                 </button>
               )}
 
-              {task.video_url && (
-                <a href={task.video_url} download
-                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[13px] text-[#FFD700] font-medium cursor-pointer transition-all no-underline">
-                  <iconify-icon icon="lucide:download" width="14" height="14" />
-                  {t('studio.detail.download')}
-                </a>
-              )}
-
               {isPersonal && onAddToGroup && (
                 <button onClick={() => { onAddToGroup(task); onClose() }}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.08] text-[13px] text-[#ccc] hover:text-white font-medium cursor-pointer transition-all border-none">
                   <iconify-icon icon="lucide:users" width="14" height="14" />
                   {t('studio.detail.addToGroup')}
                 </button>
+              )}
+
+              {task.video_url && (
+                <a href={task.video_url} download
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#FFD700]/10 hover:bg-[#FFD700]/20 border border-[#FFD700]/20 text-[13px] text-[#FFD700] font-medium cursor-pointer transition-all no-underline">
+                  <iconify-icon icon="lucide:download" width="14" height="14" />
+                  {t('studio.detail.download')}
+                </a>
               )}
             </div>
           </div>
@@ -764,6 +858,7 @@ function StudioPageInner() {
   const [duration, setDur]    = useState((defaults.defaultDuration as number) || 5)
   const [audio, setAudio]     = useState(false)
   const [background, setBackground] = useState('auto')
+  const [grounding, setGrounding] = useState('off')
   const [seedanceMode, setSeedanceMode] = useState('text_to_video')
   const [imageRefMode, setImageRefMode] = useState<'normal' | 'omni_reference'>('normal')
   // #2: count drives batch submission
@@ -782,7 +877,6 @@ function StudioPageInner() {
     return [...saved, ...mocks]
   })
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [editingTask, setEditingTask]   = useState<Task | null>(null)
 
   const fileRef    = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -992,6 +1086,7 @@ function StudioPageInner() {
     if (!opts.resolutions.includes(resolution)) setRes(opts.resolutions[0])
     if (opts.durations && !opts.durations.includes(duration)) setDur(opts.durations[1] ?? opts.durations[0])
     if (opts.qualities && !opts.qualities.includes(quality)) setQuality(opts.qualities[opts.qualities.length - 1])
+    if (!opts.grounding) setGrounding('off')
   }
 
   // #5: auto-resize textarea
@@ -1026,6 +1121,7 @@ function StudioPageInner() {
       model, resolution, ratio, duration, generate_audio: audio,
       ...(tab === 'image' && quality ? { quality } : {}),
       ...(model === 'gpt-image-2' ? { background } : {}),
+      ...(modelOpts.grounding && grounding !== 'off' ? { grounding } : {}),
       ...(model.includes('seedance') ? { mode: seedanceMode } : {}),
       prompt: prompt + cameraText,
     }
@@ -1091,6 +1187,7 @@ function StudioPageInner() {
       ...(tab === 'image' && quality ? { quality } : {}),
       ...(model === 'gpt-image-2' ? { background } : {}),
       ...(model.includes('seedance') ? { mode: seedanceMode } : {}),
+      ...(modelOpts.grounding && grounding !== 'off' ? { grounding } : {}),
     }
 
     console.group(`🍌 Generate ×${count}`)
@@ -1118,33 +1215,41 @@ function StudioPageInner() {
     } finally { setLoading(false) }
   }
 
-  // Inpainting: called when MaskEditor confirms
-  async function handleMaskConfirm(maskDataUrl: string, editPrompt: string) {
-    if (!editingTask?.video_url) return
-    setEditingTask(null)
+  // Inpainting: called when MaskEditor confirms inside DetailModal
+  async function handleMaskConfirm(editTask: Task, maskDataUrl: string, editPrompt: string, params: EditParams, refFiles: File[] = []) {
+    if (!editTask.video_url) return
     setLoading(true)
     setError('')
     try {
+      // Convert ref files to base64 data URLs
+      const refDataUrls = await Promise.all(refFiles.map(f => new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(f)
+      })))
+
       const content: unknown[] = [
         { type: 'text', text: editPrompt },
-        { type: 'image_url', image_url: { url: editingTask.video_url } },
+        { type: 'image_url', image_url: { url: editTask.video_url } },
+        ...refDataUrls.map(url => ({ type: 'image_url', image_url: { url } })),
       ]
       const { task_id } = await submitTask({
-        model: editingTask.model || model,
+        model: params.model,
         content,
-        resolution: editingTask.resolution || resolution,
-        ratio: editingTask.ratio || ratio,
+        resolution: params.resolution,
+        ratio: params.ratio,
         duration,
         mask: maskDataUrl,
-        ...(editingTask.model === 'gpt-image-2' ? { quality, background } : {}),
+        ...(params.model === 'gpt-image-2' ? { quality: params.quality, background: params.background } : {}),
       })
       const newTask: Task = {
         task_id,
         status: 'queued',
         prompt: editPrompt,
-        model: editingTask.model || model,
-        resolution: editingTask.resolution || resolution,
-        ratio: editingTask.ratio || ratio,
+        model: params.model,
+        resolution: params.resolution,
+        ratio: params.ratio,
         duration,
         created_at: Date.now(),
       }
@@ -1170,7 +1275,7 @@ function StudioPageInner() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [groupSortOrder, setGroupSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [mediaFilter, setMediaFilter] = useState<'all' | 'image' | 'video' | 'favorites'>('all')
-  const [colWidth, setColWidth] = useState(240)
+  const [colWidth, setColWidth] = useState(300)
   const PAGE_SIZE = 20
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -1288,13 +1393,19 @@ function StudioPageInner() {
                 </button>
               ))}
             </div>
-            {/* Size slider — hidden on mobile */}
-            <div className="hidden sm:flex items-center gap-2">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-              <input type="range" min={120} max={360} step={20} value={colWidth}
-                onChange={e => setColWidth(+e.target.value)}
-                className="w-20 accent-[#FFD700] cursor-pointer" />
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>
+            {/* Size toggle — hidden on mobile */}
+            <div className="hidden sm:flex items-center gap-1">
+              {([
+                { w: 240, icon: <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg> },
+                { w: 300, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg> },
+                { w: 360, icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> },
+              ] as { w: number; icon: React.ReactNode }[]).map(({ w, icon }) => (
+                <button key={w} onClick={() => setColWidth(w)}
+                  className="w-7 h-7 flex items-center justify-center rounded-md border-none cursor-pointer transition-all"
+                  style={{ background: colWidth === w ? 'var(--color-raised)' : 'transparent', color: colWidth === w ? '#FFD700' : '#555' }}>
+                  {icon}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -1721,6 +1832,30 @@ function StudioPageInner() {
               </Popover>
             )}
 
+            {/* Grounding — Nano Banana models only */}
+            {tab === 'image' && modelOpts.grounding && (
+              <Popover trigger={<Pill icon={<IconGrounding />} label={grounding === 'off' ? 'Search Off' : grounding === 'web' ? 'Web Search' : 'Web+Image'} />}>
+                <div className="w-52">
+                  <div className="px-3 pt-2.5 pb-1.5 text-[11px] font-semibold text-[#555] uppercase tracking-widest">Google Search Grounding</div>
+                  {([
+                    { value: 'off',       hint: 'No search grounding' },
+                    { value: 'web',       hint: 'Ground with web search results' },
+                    { value: 'web+image', hint: 'Web search + image search (NB2 only)' },
+                  ] as const).filter(o => modelOpts.grounding!.includes(o.value)).map(({ value, hint }) => (
+                    <button key={value} onClick={() => setGrounding(value)}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left border-none cursor-pointer font-[inherit] transition-all
+                        ${grounding === value ? 'bg-white/10 text-white' : 'bg-transparent text-[#888] hover:bg-white/5 hover:text-white'}`}>
+                      <div>
+                        <div className="text-[13px] font-medium capitalize">{value === 'off' ? 'Off' : value === 'web' ? 'Web Search' : 'Web + Image'}</div>
+                        <div className="text-[11px] text-[#555] mt-0.5">{hint}</div>
+                      </div>
+                      {grounding === value && <span className="text-[#FFD700] text-[12px] flex-shrink-0">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              </Popover>
+            )}
+
             {/* Resolution */}
             <Popover trigger={<Pill label={modelOpts.resolutions.includes(resolution) ? resolution : modelOpts.resolutions[0]} />}>
               <div className="w-44">
@@ -1806,8 +1941,8 @@ function StudioPageInner() {
               </div>
             )}
 
-            {/* Audio toggle — video only, Seedance omni_reference or Veo */}
-            {tab === 'video' && (model.includes('veo') || (model.includes('seedance') && seedanceMode === 'omni_reference')) && (
+            {/* Audio toggle — video only, Seedance (all modes) or Veo */}
+            {tab === 'video' && (model.includes('veo') || model.includes('seedance')) && (
               <>
                 <div className="w-px h-4 bg-white/[0.07] mx-0.5 flex-shrink-0" />
                 <button onClick={() => setAudio(a => !a)}
@@ -1838,8 +1973,8 @@ function StudioPageInner() {
             toast(t('studio.toast.addedToGroup'), 'success')
           }}
           onUseAsRef={(url) => {
+            const name = url.split('/').pop() || 'ref.png'
             fetch(url).then(r => r.blob()).then(blob => {
-              const name = url.split('/').pop() || 'reference.png'
               const isVideoFile = name.endsWith('.mp4') || name.endsWith('.webm') || name.endsWith('.mov')
               const file = new File([blob], name, { type: blob.type || (isVideoFile ? 'video/mp4' : 'image/png') })
 

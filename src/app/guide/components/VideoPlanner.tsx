@@ -281,9 +281,10 @@ function AssetChip({ asset, onRemove }: { asset: PlanAsset; onRemove: () => void
 interface VideoPlannerProps {
   plan: VideoPlanState
   onChange: (plan: VideoPlanState) => void
+  onReset?: () => void
 }
 
-export function VideoPlanner({ plan, onChange }: VideoPlannerProps) {
+export function VideoPlanner({ plan, onChange, onReset }: VideoPlannerProps) {
   const router = useRouter()
   const t = useT()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -957,10 +958,24 @@ export function VideoPlanner({ plan, onChange }: VideoPlannerProps) {
           {/* ── Action row ── */}
           <div className="flex items-center justify-between gap-3 pt-1 border-t"
             style={{ borderColor: 'var(--color-border)' }}>
-            <div className="text-[12px]" style={{ color: 'var(--color-faint)' }}>
-              {plan.planMode === 'first_last_frames'
-                ? `First / Last · ${plan.assets.length}/2 frames`
-                : `${plan.shots.length} shot${plan.shots.length !== 1 ? 's' : ''} · ${totalDuration}s`}
+            <div className="flex items-center gap-2">
+              <div className="text-[12px]" style={{ color: 'var(--color-faint)' }}>
+                {plan.planMode === 'first_last_frames'
+                  ? `First / Last · ${plan.assets.length}/2 frames`
+                  : `${plan.shots.length} shot${plan.shots.length !== 1 ? 's' : ''} · ${totalDuration}s`}
+              </div>
+              {onReset && !isEmpty && (
+                <button
+                  onClick={onReset}
+                  title={t('guide.reset')}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center border-none cursor-pointer transition-all flex-shrink-0"
+                  style={{ background: 'var(--color-raised)', color: 'var(--color-muted)' }}
+                  onMouseOver={e => { e.currentTarget.style.color = 'var(--color-text)'; e.currentTarget.style.background = 'var(--color-panel)' }}
+                  onMouseOut={e => { e.currentTarget.style.color = 'var(--color-muted)'; e.currentTarget.style.background = 'var(--color-raised)' }}
+                >
+                  <iconify-icon icon="lucide:rotate-ccw" width="13" height="13" style={{ display: 'block' }} />
+                </button>
+              )}
             </div>
             <button
               onClick={sendToStudio}
@@ -1565,7 +1580,7 @@ function MultiShotCard({ shot, index, total, assets, planMode, remaining, onUpda
                       {a.previewUrl
                         ? <img src={a.previewUrl} alt="" className="w-7 h-7 rounded object-cover flex-shrink-0" />
                         : <div className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0"
-                            style={{ background: 'var(--color-border)' }}>
+                               style={{ background: 'var(--color-border)' }}>
                             <iconify-icon icon="lucide:video" width="14" height="14"
                               style={{ display: 'block', color: 'var(--color-faint)' }} />
                           </div>
@@ -1575,7 +1590,6 @@ function MultiShotCard({ shot, index, total, assets, planMode, remaining, onUpda
                           {a.tag}
                         </span>
                         <span className="text-[10px]" style={{ color: 'var(--color-faint)' }}>
-
                           {a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name}
                         </span>
                       </div>

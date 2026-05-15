@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import type { LightDirectionId } from '../types'
 import { useT } from '@/lib/LanguageContext'
+import { Tooltip } from '@/components/Tooltip'
 
 // ── Direction card definitions ────────────────────────────────────────────────
 
@@ -213,13 +213,9 @@ interface LightDirectionPickerProps {
 
 export function LightDirectionPicker({ value, onChange }: LightDirectionPickerProps) {
   const t = useT()
-  const [hoveredId, setHoveredId] = useState<LightDirectionId | null>(null)
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Label row */}
-      {/* Light direction intro text omitted — cards are self-explanatory */}
-
       {/* Grid of preset cards */}
       <div
         className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2"
@@ -227,17 +223,12 @@ export function LightDirectionPicker({ value, onChange }: LightDirectionPickerPr
         aria-label="Light direction selector"
       >
         {DIRECTION_CARDS.map(card => {
-          const isActive  = value === card.id
-          const isHovered = hoveredId === card.id
+          const isActive = value === card.id
 
           return (
-            <div key={card.id} className="relative">
+            <Tooltip key={card.id} content={t(`lightDir.${card.id}.description`)}>
               <button
                 onClick={() => onChange(isActive ? null : card.id)}
-                onMouseEnter={() => setHoveredId(card.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                onFocus={() => setHoveredId(card.id)}
-                onBlur={() => setHoveredId(null)}
                 aria-pressed={isActive}
                 aria-label={`${t(`lightDir.${card.id}.label`)}: ${t(`lightDir.${card.id}.description`)}`}
                 className={[
@@ -257,27 +248,7 @@ export function LightDirectionPicker({ value, onChange }: LightDirectionPickerPr
                   {t(`lightDir.${card.id}.label`)}
                 </span>
               </button>
-
-              {/* Tooltip */}
-              {isHovered && (
-                <div
-                  className="
-                    absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
-                    px-2 py-1 rounded-md text-[11px] leading-snug text-center
-                    bg-[var(--color-hover)] border border-[var(--color-border)]
-                    text-[var(--color-text)] pointer-events-none shadow-lg
-                  "
-                  style={{ minWidth: '140px', maxWidth: '180px', whiteSpace: 'normal' }}
-                  role="tooltip"
-                >
-                  {t(`lightDir.${card.id}.description`)}
-                  <span
-                    className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"
-                    aria-hidden="true"
-                  />
-                </div>
-              )}
-            </div>
+            </Tooltip>
           )
         })}
       </div>

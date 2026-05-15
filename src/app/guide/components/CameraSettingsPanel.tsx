@@ -52,7 +52,7 @@ function FocalLengthVisualizer({ selected }: { selected: number | null }) {
             height: '100%',
             objectFit: 'cover',
             transform: `scale(${scale.toFixed(3)})`,
-            transformOrigin: 'center 30%',
+            transformOrigin: 'center 20%',
             transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease',
             filter: isUnset ? 'grayscale(1) brightness(0.6)' : 'none',
             userSelect: 'none',
@@ -209,11 +209,141 @@ function WrapRow({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-row flex-wrap gap-1.5">{children}</div>
 }
 
+// ── Focal Length Slider (mirrors DOFSlider UI) ────────────────────────────────
+
+// Ordered stops: index maps to slider value (0 = unset, 1 = 8mm, … 11 = 200mm)
+const FL_STOPS: (number | null)[] = [null, 8, 14, 18, 24, 28, 35, 50, 85, 100, 135, 200]
+const FL_LABELS: Record<number, string> = {
+  [-1]: 'Unset', // won't be used but included for safety
+  0: 'Unset', 1: '8mm', 2: '14mm', 3: '18mm', 4: '24mm', 5: '28mm',
+  6: '35mm', 7: '50mm', 8: '85mm', 9: '100mm', 10: '135mm', 11: '200mm',
+}
+
+function FocalLengthSlider({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number | null
+  disabled?: boolean
+  onChange: (fl: number | null) => void
+}) {
+  const t = useT()
+  const idx = value === null ? 0 : FL_STOPS.indexOf(value)
+  const isUnset = value === null
+  const focalColor = value !== null ? (FOCAL_COLORS[value] ?? '#fff') : undefined
+  const fov = value !== null ? fovFromFocalLength(value) : null
+
+  const scale = value !== null
+    ? fovFromFocalLength(BASE_FL) / fovFromFocalLength(value)
+    : 1
+
+  const label = t(`focal.${value}.label`)
+  const character = t(`focal.${value}.character`)
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Image preview — same structure as DOF panel */}
+      <div
+        className="relative rounded-xl overflow-hidden w-full aspect-video sm:aspect-auto sm:h-[400px]"
+        style={{}}
+        aria-hidden="true"
+      >
+        <img
+          src="/pic/guide/Focal-Length.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{
+            transform: `scale(${scale.toFixed(3)})`,
+            transformOrigin: 'center 20%',
+            transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1), filter 0.3s ease',
+            filter: isUnset ? 'grayscale(1) brightness(0.5)' : 'none',
+          }}
+        />
+        {isUnset && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[var(--color-muted)] text-sm font-medium">—</span>
+          </div>
+        )}
+      </div>
+
+      {/* Slider + labels */}
+      <div className={`flex flex-col gap-2 ${disabled ? 'opacity-30 pointer-events-none' : ''}`}>
+        {/* Label row */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[var(--color-muted)]">Wide</span>
+          <span
+            className="text-sm font-semibold tabular-nums"
+            style={{ color: isUnset ? 'var(--color-muted)' : (focalColor ?? 'var(--color-text)'), transition: 'color 0.2s' }}
+          >
+            {isUnset ? 'Unset' : `${value}mm`}
+          </span>
+          <span className="text-xs text-[var(--color-muted)]">Tele</span>
+        </div>
+
+        {/* Range input */}
+        <input
+          type="range"
+          min={0}
+          max={FL_STOPS.length - 1}
+          step={1}
+          value={idx < 0 ? 0 : idx}
+          onChange={e => {
+            const i = Number(e.target.value)
+            onChange(FL_STOPS[i])
+          }}
+          aria-label="Focal length"
+          aria-valuetext={FL_LABELS[idx < 0 ? 0 : idx]}
+          className="w-full h-1.5 rounded-full appearance-none cursor-pointer
+                     bg-[var(--color-raised)]
+                     accent-[var(--color-purple)]
+                     [&::-webkit-slider-thumb]:appearance-none
+                     [&::-webkit-slider-thumb]:w-4
+                     [&::-webkit-slider-thumb]:h-4
+                     [&::-webkit-slider-thumb]:rounded-full
+                     [&::-webkit-slider-thumb]:bg-[var(--color-purple)]
+                     [&::-webkit-slider-thumb]:cursor-pointer
+                     [&::-webkit-slider-thumb]:border-2
+                     [&::-webkit-slider-thumb]:border-white/20
+                     [&::-moz-range-thumb]:w-4
+                     [&::-moz-range-thumb]:h-4
+                     [&::-moz-range-thumb]:rounded-full
+                     [&::-moz-range-thumb]:bg-[var(--color-purple)]
+                     [&::-moz-range-thumb]:border-2
+                     [&::-moz-range-thumb]:border-white/20
+                     [&::-moz-range-thumb]:cursor-pointer"
+        />
+
+        {/* Tick marks */}
+        <div className="flex justify-between px-0.5">
+          {FL_STOPS.map((_, i) => (
+            <div
+              key={i}
+              className={`w-0.5 h-1 rounded-full transition-colors duration-150 ${
+                i === (idx < 0 ? 0 : idx)
+                  ? 'bg-[var(--color-purple)]'
+                  : 'bg-[var(--color-faint)]'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Description — fixed height to prevent layout jump */}
+        <p className="text-[11px] text-[var(--color-muted)] leading-snug h-[2.5em] overflow-hidden line-clamp-2">
+          {isUnset
+            ? t('camera.focalUnsetHint')
+            : fov !== null
+              ? `${fov.toFixed(0)}° FOV · ${label} · ${character}`
+              : ''}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function ChipRow({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-row gap-1.5 overflow-x-auto pb-1 scrollbar-none">{children}</div>
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export function CameraSettingsPanel({ value, onChange, dof, onDofChange }: CameraSettingsPanelProps) {
   const t = useT()
@@ -272,26 +402,11 @@ export function CameraSettingsPanel({ value, onChange, dof, onDofChange }: Camer
             {t('camera.focalLengthConflictNote')}
           </p>
         )}
-        <ChipRow>
-          {FOCAL_LENGTHS.filter((fl): fl is number => fl !== null).map(fl => (
-            <Chip
-              key={fl}
-              label={`${fl}mm`}
-              active={!focalLengthLocked && value.focalLength === fl}
-              disabled={focalLengthLocked}
-              onClick={() => {
-                if (focalLengthLocked) return
-                onChange({ ...value, focalLength: value.focalLength === fl ? null : fl })
-              }}
-            />
-          ))}
-        </ChipRow>
-
-        {!focalLengthLocked && (
-          <div className="mt-3">
-            <FocalLengthVisualizer selected={value.focalLength} />
-          </div>
-        )}
+        <FocalLengthSlider
+          value={value.focalLength}
+          disabled={focalLengthLocked}
+          onChange={fl => onChange({ ...value, focalLength: fl })}
+        />
       </div>
 
       {/* Depth of Field */}

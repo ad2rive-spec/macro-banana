@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import Image from 'next/image'
+import { useState } from 'react'
 import { setStyle, initialGuideState } from '../logic'
 import type { StyleId } from '../types'
 import { useT } from '@/lib/LanguageContext'
+import { Tooltip } from '@/components/Tooltip'
 
 // ── Style card definitions ────────────────────────────────────────────────────
 
@@ -107,7 +108,6 @@ interface StylePickerProps {
 
 export function StylePicker({ value, onChange }: StylePickerProps) {
   const t = useT()
-  const [hoveredId, setHoveredId] = useState<StyleId | null>(null)
 
   return (
     <div
@@ -116,11 +116,10 @@ export function StylePicker({ value, onChange }: StylePickerProps) {
       aria-label="Visual style selector"
     >
       {STYLE_CARDS.map(card => {
-        const isActive  = value === card.id
-        const isHovered = hoveredId === card.id
+        const isActive = value === card.id
 
         return (
-          <div key={card.id} className="relative">
+          <Tooltip key={card.id} content={t(`style.${card.id}.description`)}>
             <button
               onClick={() => {
                 const newState = setStyle(
@@ -129,10 +128,6 @@ export function StylePicker({ value, onChange }: StylePickerProps) {
                 )
                 onChange(newState.style)
               }}
-              onMouseEnter={() => setHoveredId(card.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onFocus={() => setHoveredId(card.id)}
-              onBlur={() => setHoveredId(null)}
               className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-150 cursor-pointer w-full ${
                 isActive
                   ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
@@ -147,27 +142,7 @@ export function StylePicker({ value, onChange }: StylePickerProps) {
                 {t(`style.${card.id}.label`)}
               </span>
             </button>
-
-            {/* Tooltip */}
-            {isHovered && (
-              <div
-                className="
-                  absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
-                  px-2 py-1 rounded-md text-[11px] leading-snug text-center
-                  bg-[var(--color-hover)] border border-[var(--color-border)]
-                  text-[var(--color-text)] pointer-events-none shadow-lg
-                "
-                style={{ minWidth: '140px', maxWidth: '180px', whiteSpace: 'normal' }}
-                role="tooltip"
-              >
-                {t(`style.${card.id}.description`)}
-                <span
-                  className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"
-                  aria-hidden="true"
-                />
-              </div>
-            )}
-          </div>
+          </Tooltip>
         )
       })}
     </div>

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { addLighting, initialGuideState } from '../logic'
 import type { LightingId } from '../types'
 import { useT } from '@/lib/LanguageContext'
+import { Tooltip } from '@/components/Tooltip'
 
 // ── Lighting card definitions ─────────────────────────────────────────────────
 
@@ -107,7 +108,6 @@ function LightingThumbnail({ card, isActive }: { card: LightingCard; isActive: b
 
 export function LightingPicker({ value, onChange }: LightingPickerProps) {
   const t = useT()
-  const [hoveredId, setHoveredId] = useState<LightingId | null>(null)
 
   return (
     <div
@@ -117,10 +117,9 @@ export function LightingPicker({ value, onChange }: LightingPickerProps) {
     >
       {LIGHTING_CARDS.map(card => {
         const isActive = value.includes(card.id)
-        const isHovered = hoveredId === card.id
 
         return (
-          <div key={card.id} className="relative">
+          <Tooltip key={card.id} content={t(`lighting.${card.id}.description`)}>
             <button
               onClick={() => {
                 const newState = addLighting(
@@ -129,10 +128,6 @@ export function LightingPicker({ value, onChange }: LightingPickerProps) {
                 )
                 onChange(newState.lighting)
               }}
-              onMouseEnter={() => setHoveredId(card.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onFocus={() => setHoveredId(card.id)}
-              onBlur={() => setHoveredId(null)}
               className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-150 cursor-pointer w-full ${
                 isActive
                   ? 'bg-[var(--color-purple-subtle)] border-[rgba(255,215,0,0.4)]'
@@ -146,28 +141,7 @@ export function LightingPicker({ value, onChange }: LightingPickerProps) {
                 {t(`lighting.${card.id}.label`)}
               </span>
             </button>
-
-            {/* Tooltip */}
-            {isHovered && (
-              <div
-                className="
-                  absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
-                  px-2 py-1 rounded-md text-[11px] leading-snug text-center
-                  bg-[var(--color-hover)] border border-[var(--color-border)]
-                  text-[var(--color-text)] whitespace-nowrap pointer-events-none
-                  shadow-lg
-                "
-                role="tooltip"
-              >
-                {t(`lighting.${card.id}.description`)}
-                {/* Arrow */}
-                <span
-                  className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--color-hover)]"
-                  aria-hidden="true"
-                />
-              </div>
-            )}
-          </div>
+          </Tooltip>
         )
       })}
     </div>

@@ -243,7 +243,7 @@ export default function GuidePage() {
       fileArray.map(file =>
         resizeImage(file).then(dataUrl => {
           const count = imageRefs.filter(r => r.kind === 'image').length + fileArray.indexOf(file)
-          const tag = '@ref' + (count + 1)
+          const tag = '@image' + (count + 1)
           return { tag, kind: 'image' as const, file, previewUrl: dataUrl, name: file.name }
         })
       )
@@ -311,7 +311,7 @@ export default function GuidePage() {
 
       {/* Video mode */}
       {mediaTab === 'video' ? (
-        <VideoPlanner plan={videoPlan} onChange={setVideoPlan} />
+        <VideoPlanner plan={videoPlan} onChange={setVideoPlan} onReset={() => setVideoPlan(makeEmptyPlan())} />
       ) : (
         <>
           <GuideSidebar state={imageState} mediaTab="image" />
@@ -324,8 +324,8 @@ export default function GuidePage() {
                 <SectionHeading label={t('guide.section.references')} hasSelection={imageRefs.length > 0} tag={t('guide.optional')} />
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] p-4">
                   <p className="text-[12px] mb-3" style={{ color: 'var(--color-muted)' }}>
-                    {t('guide.refs.description')} <span className="font-mono text-[11px] px-1 rounded" style={{ background: 'var(--color-raised)', color: 'var(--color-purple)' }}>@ref1</span>,&nbsp;
-                    <span className="font-mono text-[11px] px-1 rounded" style={{ background: 'var(--color-raised)', color: 'var(--color-purple)' }}>@ref2</span>… {t('guide.refs.in')}
+                    {t('guide.refs.description')} <span className="font-mono text-[11px] px-1 rounded" style={{ background: 'var(--color-raised)', color: 'var(--color-purple)' }}>@image1</span>,&nbsp;
+                    <span className="font-mono text-[11px] px-1 rounded" style={{ background: 'var(--color-raised)', color: 'var(--color-purple)' }}>@image2</span>… {t('guide.refs.in')}
                   </p>
                   <div className="flex items-start gap-3 flex-wrap">
                     {imageRefs.map(ref => (
@@ -618,7 +618,8 @@ export default function GuidePage() {
             onReset={() => setImageState(s => resetState(s))}
             onSend={sendImageToStudio}
           />
-                </>
+
+        </>
       )}
     </div>
   )
